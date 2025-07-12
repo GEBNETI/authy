@@ -1,25 +1,26 @@
 package models
 
 import (
-	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"gorm.io/datatypes"
 )
 
 type Role struct {
-	ID            uuid.UUID      `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	Name          string         `json:"name" gorm:"not null;size:100"`
-	Description   string         `json:"description" gorm:"type:text"`
-	ApplicationID uuid.UUID      `json:"application_id" gorm:"type:uuid;not null"`
-	Permissions   datatypes.JSON `json:"permissions" gorm:"type:jsonb;default:'{}'"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
+	ID            uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	Name          string    `json:"name" gorm:"not null;size:100"`
+	Description   string    `json:"description" gorm:"type:text"`
+	ApplicationID uuid.UUID `json:"application_id" gorm:"type:uuid;not null"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 
 	// Relationships
-	Application *Application `json:"application,omitempty" gorm:"foreignKey:ApplicationID"`
-	UserRoles   []UserRole   `json:"user_roles,omitempty" gorm:"foreignKey:RoleID"`
+	Application     *Application     `json:"application,omitempty" gorm:"foreignKey:ApplicationID"`
+	UserRoles       []UserRole       `json:"user_roles,omitempty" gorm:"foreignKey:RoleID"`
+	Permissions     []Permission     `json:"permissions,omitempty" gorm:"many2many:role_permissions;"`
+	RolePermissions []RolePermission `json:"role_permissions,omitempty" gorm:"foreignKey:RoleID"`
 }
 
 // TableName specifies the table name for GORM
@@ -35,118 +36,50 @@ func (r *Role) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// Permission represents a single permission
-type Permission struct {
-	Resource string   `json:"resource"`
-	Actions  []string `json:"actions"`
-}
-
-// SetPermissions sets the permissions for this role
-func (r *Role) SetPermissions(permissions []Permission) error {
-	permissionsJSON, err := json.Marshal(permissions)
-	if err != nil {
-		return err
-	}
-	r.Permissions = datatypes.JSON(permissionsJSON)
-	return nil
-}
-
-// GetPermissions returns the permissions for this role
-func (r *Role) GetPermissions() ([]Permission, error) {
-	var permissions []Permission
-	if len(r.Permissions) == 0 {
-		return permissions, nil
-	}
-	
-	err := json.Unmarshal(r.Permissions, &permissions)
-	return permissions, err
-}
-
-// HasPermission checks if this role has a specific permission
-func (r *Role) HasPermission(resource, action string) (bool, error) {
-	permissions, err := r.GetPermissions()
-	if err != nil {
-		return false, err
-	}
-	
-	for _, perm := range permissions {
-		if perm.Resource == resource {
-			for _, allowedAction := range perm.Actions {
-				if allowedAction == action || allowedAction == "*" {
-					return true, nil
-				}
-			}
-		}
-	}
-	
-	return false, nil
-}
-
-// AddPermission adds a new permission to this role
-func (r *Role) AddPermission(resource, action string) error {
-	permissions, err := r.GetPermissions()
-	if err != nil {
-		return err
-	}
-	
-	// Find existing permission for resource
-	for i, perm := range permissions {
-		if perm.Resource == resource {
-			// Check if action already exists
-			for _, existingAction := range perm.Actions {
-				if existingAction == action {
-					return nil // Already exists
-				}
-			}
-			// Add action to existing permission
-			permissions[i].Actions = append(permissions[i].Actions, action)
-			return r.SetPermissions(permissions)
-		}
-	}
-	
-	// Create new permission
-	newPermission := Permission{
-		Resource: resource,
-		Actions:  []string{action},
-	}
-	permissions = append(permissions, newPermission)
-	return r.SetPermissions(permissions)
-}
-
-// RemovePermission removes a permission from this role
-func (r *Role) RemovePermission(resource, action string) error {
-	permissions, err := r.GetPermissions()
-	if err != nil {
-		return err
-	}
-	
-	for i, perm := range permissions {
-		if perm.Resource == resource {
-			// Remove action from permission
-			newActions := make([]string, 0)
-			for _, existingAction := range perm.Actions {
-				if existingAction != action {
-					newActions = append(newActions, existingAction)
-				}
-			}
-			
-			if len(newActions) == 0 {
-				// Remove entire permission if no actions left
-				permissions = append(permissions[:i], permissions[i+1:]...)
-			} else {
-				permissions[i].Actions = newActions
-			}
-			
-			return r.SetPermissions(permissions)
-		}
-	}
-	
-	return nil // Permission not found, nothing to remove
-}
 
 // GetUserCount returns the number of users with this role
 func (r *Role) GetUserCount(db *gorm.DB) (int64, error) {
 	var count int64
 	err := db.Model(&UserRole{}).Where("role_id = ?", r.ID).Count(&count).Error
 	return count, err
+}
+
+// New methods for the new permission structure
+
+// HasPermission checks if this role has a specific permission using the new structure
+func (r *Role) HasPermission(db *gorm.DB, resource, action string) (bool, error) {
+	return HasRolePermission(db, r.ID, resource, action)
+}
+
+// AddPermission adds a permission to this role using the new structure
+func (r *Role) AddPermission(db *gorm.DB, permissionID uuid.UUID, grantedBy *uuid.UUID) error {
+	return AssignPermissionToRole(db, r.ID, permissionID, grantedBy)
+}
+
+// RemovePermission removes a permission from this role using the new structure
+func (r *Role) RemovePermission(db *gorm.DB, permissionID uuid.UUID) error {
+	return RemovePermissionFromRole(db, r.ID, permissionID)
+}
+
+// GetPermissions returns all permissions for this role using the new structure
+func (r *Role) GetPermissions(db *gorm.DB) ([]Permission, error) {
+	return GetRolePermissions(db, r.ID)
+}
+
+// LoadPermissions loads the permissions relationship
+func (r *Role) LoadPermissions(db *gorm.DB) error {
+	return db.Preload("Permissions").First(r, r.ID).Error
+}
+
+// HasRolePermission checks if a role has a specific permission
+func HasRolePermission(db *gorm.DB, roleID uuid.UUID, resource, action string) (bool, error) {
+	permissionName := fmt.Sprintf("%s:%s", strings.ToLower(resource), strings.ToLower(action))
+	
+	var count int64
+	err := db.Model(&Permission{}).
+		Joins("JOIN role_permissions ON role_permissions.permission_id = permissions.id").
+		Where("role_permissions.role_id = ? AND permissions.name = ?", roleID, permissionName).
+		Count(&count).Error
+	
+	return count > 0, err
 }
