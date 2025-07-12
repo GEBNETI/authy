@@ -458,30 +458,5 @@ func (h *AuthHandler) ValidateToken(c *fiber.Ctx) error {
 
 // getUserPermissions retrieves user permissions for a specific application
 func (h *AuthHandler) getUserPermissions(userID, applicationID uuid.UUID) ([]string, error) {
-	var userRoles []models.UserRole
-	err := h.db.Preload("Role").
-		Where("user_id = ? AND application_id = ?", userID, applicationID).
-		Find(&userRoles).Error
-	if err != nil {
-		return nil, err
-	}
-
-	var allPermissions []string
-	for _, userRole := range userRoles {
-		if userRole.Role != nil {
-			permissions, err := userRole.Role.GetPermissions()
-			if err != nil {
-				continue
-			}
-			
-			for _, perm := range permissions {
-				for _, action := range perm.Actions {
-					permString := perm.Resource + ":" + action
-					allPermissions = append(allPermissions, permString)
-				}
-			}
-		}
-	}
-
-	return allPermissions, nil
+	return models.GetUserPermissionStrings(h.db, userID, applicationID)
 }

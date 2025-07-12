@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -115,3 +116,73 @@ func RemoveAllUserRolesInApplication(db *gorm.DB, userID, applicationID uuid.UUI
 	return db.Where("user_id = ? AND application_id = ?", userID, applicationID).
 		Delete(&UserRole{}).Error
 }
+
+// Permission validation functions using the new structure
+
+// GetUserPermissionsInApplication returns all permissions for a user in a specific application
+func GetUserPermissionsInApplication(db *gorm.DB, userID, applicationID uuid.UUID) ([]Permission, error) {
+	return GetUserPermissions(db, userID, applicationID)
+}
+
+// UserHasPermission checks if a user has a specific permission in an application (new structure)
+func UserHasPermission(db *gorm.DB, userID, applicationID uuid.UUID, resource, action string) (bool, error) {
+	return HasUserPermission(db, userID, applicationID, resource, action)
+}
+
+// UserHasAnyPermission checks if a user has any of the specified permissions
+func UserHasAnyPermission(db *gorm.DB, userID, applicationID uuid.UUID, permissions []string) (bool, error) {
+	for _, permission := range permissions {
+		resource, action, err := ParsePermission(permission)
+		if err != nil {
+			continue
+		}
+		
+		hasPermission, err := HasUserPermission(db, userID, applicationID, resource, action)
+		if err != nil {
+			return false, err
+		}
+		
+		if hasPermission {
+			return true, nil
+		}
+	}
+	
+	return false, nil
+}
+
+// GetUserPermissionStrings returns user permissions as string array (resource:action format)
+func GetUserPermissionStrings(db *gorm.DB, userID, applicationID uuid.UUID) ([]string, error) {
+	permissions, err := GetUserPermissions(db, userID, applicationID)
+	if err != nil {
+		return nil, err
+	}
+	
+	var permissionStrings []string
+	for _, permission := range permissions {
+		permissionStrings = append(permissionStrings, permission.Name)
+	}
+	
+	return permissionStrings, nil
+}
+
+// ValidateUserPermissionsForRequest validates if user has all required permissions
+func ValidateUserPermissionsForRequest(db *gorm.DB, userID, applicationID uuid.UUID, requiredPermissions []string) error {
+	for _, permission := range requiredPermissions {
+		resource, action, err := ParsePermission(permission)
+		if err != nil {
+			return fmt.Errorf("invalid permission format: %s", permission)
+		}
+		
+		hasPermission, err := HasUserPermission(db, userID, applicationID, resource, action)
+		if err != nil {
+			return fmt.Errorf("error checking permission %s: %w", permission, err)
+		}
+		
+		if !hasPermission {
+			return fmt.Errorf("missing required permission: %s", permission)
+		}
+	}
+	
+	return nil
+}
+

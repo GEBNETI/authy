@@ -9,6 +9,7 @@ import (
 	"github.com/efrenfuentes/authy/internal/cache"
 	"github.com/efrenfuentes/authy/internal/handlers"
 	"github.com/efrenfuentes/authy/internal/middleware"
+	"github.com/efrenfuentes/authy/internal/models"
 	"github.com/efrenfuentes/authy/pkg/auth"
 	"github.com/efrenfuentes/authy/pkg/logger"
 	"github.com/efrenfuentes/authy/pkg/metrics"
@@ -47,6 +48,12 @@ func main() {
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database", "error", err)
+	}
+	
+	// Run permission migration if needed
+	if err := models.MigrateFromLegacyPermissions(db); err != nil {
+		log.Error("Failed to migrate legacy permissions", "error", err)
+		// Don't fail startup, just log the error
 	}
 	
 	// Connect to cache
@@ -97,6 +104,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(db, cache, log, sessionService)
 	userHandler := handlers.NewUserHandler(db, cache, log, sessionService)
 	appHandler := handlers.NewApplicationHandler(db, cache, log)
+	permissionHandler := handlers.NewPermissionHandler(db, log)
 	
 	// Auth routes (with rate limiting)
 	auth := api.Group("/auth")
@@ -125,6 +133,14 @@ func main() {
 	apps.Get("/:id", middleware.RequirePermission("applications", "read"), appHandler.GetApplication)
 	apps.Put("/:id", middleware.RequirePermission("applications", "update"), appHandler.UpdateApplication)
 	apps.Delete("/:id", middleware.RequirePermission("applications", "delete"), appHandler.DeleteApplication)
+	
+	// Permission routes (require authentication)
+	permissions := api.Group("/permissions")
+	permissions.Use(middleware.AuthRequired(sessionService))
+	permissions.Get("/", middleware.RequirePermission("permissions", "list"), permissionHandler.GetPermissions)
+	permissions.Post("/", middleware.RequirePermission("permissions", "create"), permissionHandler.CreatePermission)
+	permissions.Get("/:id", middleware.RequirePermission("permissions", "read"), permissionHandler.GetPermission)
+	permissions.Delete("/:id", middleware.RequirePermission("permissions", "delete"), permissionHandler.DeletePermission)
 	
 	// Start server
 	port := os.Getenv("PORT")
