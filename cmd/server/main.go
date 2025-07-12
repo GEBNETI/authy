@@ -10,6 +10,7 @@ import (
 	"github.com/efrenfuentes/authy/internal/handlers"
 	"github.com/efrenfuentes/authy/internal/middleware"
 	"github.com/efrenfuentes/authy/internal/models"
+	"github.com/efrenfuentes/authy/internal/services"
 	"github.com/efrenfuentes/authy/pkg/auth"
 	"github.com/efrenfuentes/authy/pkg/logger"
 	"github.com/efrenfuentes/authy/pkg/metrics"
@@ -100,11 +101,15 @@ func main() {
 	// API routes
 	api := app.Group("/api/v1")
 	
+	// Initialize services
+	auditService := services.NewAuditService(db, log)
+
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(db, cache, log, sessionService)
 	userHandler := handlers.NewUserHandler(db, cache, log, sessionService)
 	appHandler := handlers.NewApplicationHandler(db, cache, log)
 	permissionHandler := handlers.NewPermissionHandler(db, log)
+	auditHandler := handlers.NewAuditHandler(auditService)
 	
 	// Auth routes (with rate limiting)
 	auth := api.Group("/auth")
@@ -142,6 +147,14 @@ func main() {
 	permissions.Post("/", middleware.RequirePermission("permissions", "create"), permissionHandler.CreatePermission)
 	permissions.Get("/:id", middleware.RequirePermission("permissions", "read"), permissionHandler.GetPermission)
 	permissions.Delete("/:id", middleware.RequirePermission("permissions", "delete"), permissionHandler.DeletePermission)
+	
+	// Audit log routes (require authentication and audit permissions)
+	auditLogs := api.Group("/audit-logs")
+	auditLogs.Use(middleware.AuthRequired(sessionService))
+	auditLogs.Get("/", middleware.RequirePermission("system", "audit"), auditHandler.GetAuditLogs)
+	auditLogs.Get("/stats", middleware.RequirePermission("system", "audit"), auditHandler.GetAuditStats)
+	auditLogs.Get("/export", middleware.RequirePermission("system", "audit"), auditHandler.ExportAuditLogs)
+	auditLogs.Get("/options", middleware.RequirePermission("system", "audit"), auditHandler.GetAuditOptions)
 	
 	// Start server
 	port := os.Getenv("PORT")
