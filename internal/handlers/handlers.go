@@ -71,22 +71,7 @@ func Metrics() fiber.Handler {
 	return adaptor.HTTPHandler(promhttp.Handler())
 }
 
-// Auth handlers (placeholders)
-func (h *AuthHandler) Login(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Login endpoint - not implemented yet"})
-}
-
-func (h *AuthHandler) Logout(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Logout endpoint - not implemented yet"})
-}
-
-func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Refresh token endpoint - not implemented yet"})
-}
-
-func (h *AuthHandler) ValidateToken(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Validate token endpoint - not implemented yet"})
-}
+// Auth handlers are now implemented in auth.go
 
 // User handlers (placeholders)
 func (h *UserHandler) GetUsers(c *fiber.Ctx) error {

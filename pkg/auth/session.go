@@ -287,3 +287,20 @@ func (s *SessionService) RefreshTokenPair(ctx context.Context, refreshToken stri
 	
 	return tokenPair, nil
 }
+
+// GenerateTokenPair creates new access and refresh tokens (wrapper for JWT service)
+func (s *SessionService) GenerateTokenPair(userID, applicationID uuid.UUID, permissions []string) (*TokenPair, *Claims, *Claims, error) {
+	return s.jwtService.GenerateTokenPair(userID, applicationID, permissions)
+}
+
+// ValidateRefreshToken validates a refresh token (wrapper for JWT service)
+func (s *SessionService) ValidateRefreshToken(ctx context.Context, refreshToken string) (*Claims, error) {
+	// Check cache first for blacklisted tokens
+	tokenHash := s.hashToken(refreshToken)
+	blacklistKey := s.getBlacklistKey(tokenHash)
+	if blacklisted, _ := s.cache.Get(ctx, blacklistKey); blacklisted != "" {
+		return nil, ErrInvalidToken
+	}
+	
+	return s.jwtService.ValidateRefreshToken(refreshToken)
+}
