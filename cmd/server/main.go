@@ -2,12 +2,14 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/efrenfuentes/authy/internal/config"
 	"github.com/efrenfuentes/authy/internal/database"
 	"github.com/efrenfuentes/authy/internal/cache"
 	"github.com/efrenfuentes/authy/internal/handlers"
 	"github.com/efrenfuentes/authy/internal/middleware"
+	"github.com/efrenfuentes/authy/pkg/auth"
 	"github.com/efrenfuentes/authy/pkg/logger"
 	"github.com/efrenfuentes/authy/pkg/metrics"
 	
@@ -53,6 +55,17 @@ func main() {
 		log.Fatal("Failed to connect to cache", "error", err)
 	}
 	
+	// Initialize JWT service
+	jwtService := auth.NewJWTService(
+		cfg.JWTSecret,
+		time.Duration(cfg.JWTExpiration)*time.Second,
+		time.Duration(cfg.RefreshExpiration)*time.Second,
+		cfg.ServiceName,
+	)
+	
+	// Initialize session service
+	sessionService := auth.NewSessionService(cache, jwtService)
+	
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		AppName: "Authy Authentication Service v1.0",
@@ -64,6 +77,9 @@ func main() {
 	app.Use(cors.New())
 	app.Use(middleware.Logger(log))
 	app.Use(middleware.Metrics())
+	
+	// Rate limiting for auth endpoints
+	authRateLimit := middleware.RateLimiter(cache, 10) // 10 requests per minute
 	
 	// Health check endpoint
 	app.Get("/health", handlers.HealthCheck(cfg))
@@ -78,36 +94,37 @@ func main() {
 	api := app.Group("/api/v1")
 	
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(db, cache, log)
+	authHandler := handlers.NewAuthHandler(db, cache, log, sessionService)
 	userHandler := handlers.NewUserHandler(db, cache, log)
 	appHandler := handlers.NewApplicationHandler(db, cache, log)
 	
-	// Auth routes
+	// Auth routes (with rate limiting)
 	auth := api.Group("/auth")
+	auth.Use(authRateLimit)
 	auth.Post("/login", authHandler.Login)
 	auth.Post("/logout", authHandler.Logout)
 	auth.Post("/refresh", authHandler.RefreshToken)
 	auth.Post("/validate", authHandler.ValidateToken)
 	
-	// User routes
+	// User routes (require authentication)
 	users := api.Group("/users")
-	users.Use(middleware.AuthRequired())
+	users.Use(middleware.AuthRequired(sessionService))
 	users.Get("/", userHandler.GetUsers)
-	users.Post("/", userHandler.CreateUser)
-	users.Get("/:id", userHandler.GetUser)
-	users.Put("/:id", userHandler.UpdateUser)
-	users.Delete("/:id", userHandler.DeleteUser)
-	users.Post("/:id/roles", userHandler.AssignRole)
-	users.Delete("/:id/roles/:role_id", userHandler.RemoveRole)
+	users.Post("/", middleware.RequirePermission("users", "create"), userHandler.CreateUser)
+	users.Get("/:id", middleware.RequirePermission("users", "read"), userHandler.GetUser)
+	users.Put("/:id", middleware.RequirePermission("users", "update"), userHandler.UpdateUser)
+	users.Delete("/:id", middleware.RequirePermission("users", "delete"), userHandler.DeleteUser)
+	users.Post("/:id/roles", middleware.RequirePermission("users", "update"), userHandler.AssignRole)
+	users.Delete("/:id/roles/:role_id", middleware.RequirePermission("users", "update"), userHandler.RemoveRole)
 	
-	// Application routes
+	// Application routes (require authentication)
 	apps := api.Group("/applications")
-	apps.Use(middleware.AuthRequired())
-	apps.Get("/", appHandler.GetApplications)
-	apps.Post("/", appHandler.CreateApplication)
-	apps.Get("/:id", appHandler.GetApplication)
-	apps.Put("/:id", appHandler.UpdateApplication)
-	apps.Delete("/:id", appHandler.DeleteApplication)
+	apps.Use(middleware.AuthRequired(sessionService))
+	apps.Get("/", middleware.RequirePermission("applications", "read"), appHandler.GetApplications)
+	apps.Post("/", middleware.RequirePermission("applications", "create"), appHandler.CreateApplication)
+	apps.Get("/:id", middleware.RequirePermission("applications", "read"), appHandler.GetApplication)
+	apps.Put("/:id", middleware.RequirePermission("applications", "update"), appHandler.UpdateApplication)
+	apps.Delete("/:id", middleware.RequirePermission("applications", "delete"), appHandler.DeleteApplication)
 	
 	// Start server
 	port := os.Getenv("PORT")

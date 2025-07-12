@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/efrenfuentes/authy/internal/cache"
 	"github.com/efrenfuentes/authy/internal/config"
+	"github.com/efrenfuentes/authy/pkg/auth"
 	"github.com/efrenfuentes/authy/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
@@ -11,9 +12,10 @@ import (
 )
 
 type AuthHandler struct {
-	db     *gorm.DB
-	cache  *cache.Client
-	logger *logger.Logger
+	db             *gorm.DB
+	cache          *cache.Client
+	logger         *logger.Logger
+	sessionService *auth.SessionService
 }
 
 type UserHandler struct {
@@ -28,11 +30,12 @@ type ApplicationHandler struct {
 	logger *logger.Logger
 }
 
-func NewAuthHandler(db *gorm.DB, cache *cache.Client, logger *logger.Logger) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, cache *cache.Client, logger *logger.Logger, sessionService *auth.SessionService) *AuthHandler {
 	return &AuthHandler{
-		db:     db,
-		cache:  cache,
-		logger: logger,
+		db:             db,
+		cache:          cache,
+		logger:         logger,
+		sessionService: sessionService,
 	}
 }
 
