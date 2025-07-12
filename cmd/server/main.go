@@ -133,6 +133,7 @@ func main() {
 	apps.Get("/:id", middleware.RequirePermission("applications", "read"), appHandler.GetApplication)
 	apps.Put("/:id", middleware.RequirePermission("applications", "update"), appHandler.UpdateApplication)
 	apps.Delete("/:id", middleware.RequirePermission("applications", "delete"), appHandler.DeleteApplication)
+	apps.Post("/:id/regenerate-key", middleware.RequirePermission("applications", "update"), appHandler.RegenerateAPIKey)
 	
 	// Permission routes (require authentication)
 	permissions := api.Group("/permissions")
