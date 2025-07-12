@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: authy_postgres
+    environment:
+      POSTGRES_DB: authy
+      POSTGRES_USER: authy_user
+      POSTGRES_PASSWORD: authy_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authy_user -d authy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  valkey:
+    image: valkey/valkey:7.2-alpine
+    container_name: authy_valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  authy:
+    build: .
+    container_name: authy_api
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://authy_user:authy_password@postgres:5432/authy?sslmode=disable
+      VALKEY_URL: valkey:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      LOG_LEVEL: info
+      ENVIRONMENT: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: authy_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: authy_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/datasources:/etc/grafana/provisioning/datasources
+
+volumes:
+  postgres_data:
+  valkey_data:
+  grafana_data:
