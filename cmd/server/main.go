@@ -95,7 +95,7 @@ func main() {
 	
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(db, cache, log, sessionService)
-	userHandler := handlers.NewUserHandler(db, cache, log)
+	userHandler := handlers.NewUserHandler(db, cache, log, sessionService)
 	appHandler := handlers.NewApplicationHandler(db, cache, log)
 	
 	// Auth routes (with rate limiting)

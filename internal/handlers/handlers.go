@@ -19,9 +19,10 @@ type AuthHandler struct {
 }
 
 type UserHandler struct {
-	db     *gorm.DB
-	cache  *cache.Client
-	logger *logger.Logger
+	db             *gorm.DB
+	cache          *cache.Client
+	logger         *logger.Logger
+	sessionService *auth.SessionService
 }
 
 type ApplicationHandler struct {
@@ -39,11 +40,12 @@ func NewAuthHandler(db *gorm.DB, cache *cache.Client, logger *logger.Logger, ses
 	}
 }
 
-func NewUserHandler(db *gorm.DB, cache *cache.Client, logger *logger.Logger) *UserHandler {
+func NewUserHandler(db *gorm.DB, cache *cache.Client, logger *logger.Logger, sessionService *auth.SessionService) *UserHandler {
 	return &UserHandler{
-		db:     db,
-		cache:  cache,
-		logger: logger,
+		db:             db,
+		cache:          cache,
+		logger:         logger,
+		sessionService: sessionService,
 	}
 }
 
@@ -73,34 +75,9 @@ func Metrics() fiber.Handler {
 
 // Auth handlers are now implemented in auth.go
 
-// User handlers (placeholders)
-func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Get users endpoint - not implemented yet"})
-}
+// Common response types are defined in types.go
 
-func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Create user endpoint - not implemented yet"})
-}
-
-func (h *UserHandler) GetUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Get user endpoint - not implemented yet"})
-}
-
-func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Update user endpoint - not implemented yet"})
-}
-
-func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Delete user endpoint - not implemented yet"})
-}
-
-func (h *UserHandler) AssignRole(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Assign role endpoint - not implemented yet"})
-}
-
-func (h *UserHandler) RemoveRole(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Remove role endpoint - not implemented yet"})
-}
+// User handlers are implemented in users.go and user_roles.go
 
 // Application handlers (placeholders)
 func (h *ApplicationHandler) GetApplications(c *fiber.Ctx) error {
