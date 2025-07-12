@@ -86,14 +86,6 @@ var (
 )
 
 func Init() {
-	// Register custom metrics if needed
-	prometheus.MustRegister(HTTPRequestsTotal)
-	prometheus.MustRegister(HTTPRequestDuration)
-	prometheus.MustRegister(LoginAttemptsTotal)
-	prometheus.MustRegister(TokensIssued)
-	prometheus.MustRegister(TokenValidations)
-	prometheus.MustRegister(DatabaseConnections)
-	prometheus.MustRegister(DatabaseQueryDuration)
-	prometheus.MustRegister(CacheOperations)
-	prometheus.MustRegister(CacheHitRatio)
+	// Metrics are already auto-registered with promauto
+	// This function can be used for any additional initialization if needed
 }
