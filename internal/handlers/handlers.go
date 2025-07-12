@@ -79,23 +79,4 @@ func Metrics() fiber.Handler {
 
 // User handlers are implemented in users.go and user_roles.go
 
-// Application handlers (placeholders)
-func (h *ApplicationHandler) GetApplications(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Get applications endpoint - not implemented yet"})
-}
-
-func (h *ApplicationHandler) CreateApplication(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Create application endpoint - not implemented yet"})
-}
-
-func (h *ApplicationHandler) GetApplication(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Get application endpoint - not implemented yet"})
-}
-
-func (h *ApplicationHandler) UpdateApplication(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Update application endpoint - not implemented yet"})
-}
-
-func (h *ApplicationHandler) DeleteApplication(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Delete application endpoint - not implemented yet"})
-}
+// Application handlers are implemented in applications.go
