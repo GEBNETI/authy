@@ -25,12 +25,7 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		message = e.Message
 	}
 
-	// Record error metrics
-	metrics.HTTPRequestsTotal.WithLabelValues(
-		c.Method(),
-		c.Path(),
-		strconv.Itoa(code),
-	).Inc()
+	// Metrics are already recorded by the Metrics() middleware
 
 	return c.Status(code).JSON(fiber.Map{
 		"error":   true,
@@ -65,20 +60,17 @@ func Metrics() fiber.Handler {
 		
 		err := c.Next()
 		
+		// Skip recording metrics for the metrics endpoint and docs to avoid issues
+		path := c.Path()
+		if strings.HasPrefix(path, "/metrics") || strings.HasPrefix(path, "/docs") || strings.HasPrefix(path, "/swagger") {
+			return err
+		}
+		
 		duration := time.Since(start).Seconds()
 		status := c.Response().StatusCode()
 		
-		// Record metrics
-		metrics.HTTPRequestsTotal.WithLabelValues(
-			c.Method(),
-			c.Path(),
-			strconv.Itoa(status),
-		).Inc()
-		
-		metrics.HTTPRequestDuration.WithLabelValues(
-			c.Method(),
-			c.Path(),
-		).Observe(duration)
+		// Record metrics using our simple collector
+		metrics.RecordHTTPRequest(c.Method(), path, strconv.Itoa(status), duration)
 		
 		return err
 	}
