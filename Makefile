@@ -38,9 +38,9 @@ clean: ## Clean build artifacts
 	rm -rf bin/
 	rm -f coverage.out coverage.html
 
-docker-build: ## Build Docker image
-	@echo "$(GREEN)Building Docker image...$(NC)"
-	docker build -t $(DOCKER_IMAGE) .
+docker-build: ## Build Podman image
+	@echo "$(GREEN)Building Podman image...$(NC)"
+	podman build -t $(DOCKER_IMAGE) .
 
 docker-run: ## Run with Docker Compose
 	@echo "$(GREEN)Starting services with Docker Compose...$(NC)"

@@ -15,6 +15,8 @@ import (
 	"github.com/efrenfuentes/authy/pkg/logger"
 	"github.com/efrenfuentes/authy/pkg/metrics"
 	
+	_ "github.com/efrenfuentes/authy/docs"
+	
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
