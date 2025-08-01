@@ -20,7 +20,7 @@ import {
   ModalFooter,
   Avatar
 } from '../../components/ui';
-import { UserForm } from '../../components/forms';
+import { UserForm, UserRolesModal } from '../../components/forms';
 import { useUsers } from '../../hooks';
 import type { User, CreateUserRequest, UpdateUserRequest } from '../../types';
 import { utils, formatUtils } from '../../utils';
@@ -31,6 +31,8 @@ const UsersPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [showRolesModal, setShowRolesModal] = useState(false);
+  const [userForRoles, setUserForRoles] = useState<User | null>(null);
 
   const {
     users,
@@ -40,6 +42,7 @@ const UsersPage: React.FC = () => {
     setPage,
     createUser,
     updateUser,
+    refetch,
   } = useUsers();
 
   // Debounced search
@@ -69,6 +72,12 @@ const UsersPage: React.FC = () => {
   const handleDeleteUser = (user: User) => {
     setUserToDelete(user);
     setShowDeleteModal(true);
+  };
+
+  // Handle manage roles
+  const handleManageRoles = (user: User) => {
+    setUserForRoles(user);
+    setShowRolesModal(true);
   };
 
   // Handle form submit
@@ -229,7 +238,7 @@ const UsersPage: React.FC = () => {
               className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
             >
               <li>
-                <a>
+                <a onClick={() => handleManageRoles(record)}>
                   <Shield className="w-4 h-4" />
                   Manage Roles
                 </a>
@@ -332,6 +341,17 @@ const UsersPage: React.FC = () => {
         onSubmit={handleFormSubmit}
         user={selectedUser || undefined}
         loading={formLoading}
+      />
+
+      {/* User Roles Modal */}
+      <UserRolesModal
+        isOpen={showRolesModal}
+        onClose={() => {
+          setShowRolesModal(false);
+          setUserForRoles(null);
+        }}
+        user={userForRoles}
+        onRolesUpdated={refetch}
       />
 
       {/* User Status Change Confirmation Modal */}

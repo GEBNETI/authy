@@ -1,9 +1,9 @@
 import React from 'react';
 import { z } from 'zod';
-import { Crown } from 'lucide-react';
-import { Button, Input, Modal, ModalBody, ModalFooter } from '../ui';
+import { Crown, Building } from 'lucide-react';
+import { Button, Input, Modal, ModalBody, ModalFooter, Select } from '../ui';
 import { PermissionSelector } from './PermissionSelector';
-import { useForm } from '../../hooks';
+import { useForm, useApplications } from '../../hooks';
 import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../../types';
 
 // Validation schemas
@@ -16,6 +16,9 @@ const createRoleSchema = z.object({
     .string()
     .min(1, 'Description is required')
     .max(500, 'Description must be less than 500 characters'),
+  application_id: z
+    .string()
+    .min(1, 'Application is required'),
   permission_ids: z.array(z.string()).optional(),
 });
 
@@ -50,12 +53,18 @@ export const RoleForm: React.FC<RoleFormProps> = ({
   loading = false,
 }) => {
   const isEditing = !!role;
+  
+  // Fetch applications for dropdown
+  const { applications = [], loading: loadingApplications } = useApplications({
+    limit: 100, // Get all applications
+  });
 
   // Form for creating role
   const createForm = useForm<CreateRoleFormData>({
     initialValues: {
       name: '',
       description: '',
+      application_id: '',
       permission_ids: [],
     },
     validationSchema: createRoleSchema,
@@ -111,6 +120,32 @@ export const RoleForm: React.FC<RoleFormProps> = ({
     >
       <form onSubmit={currentForm.handleSubmit} className="space-y-6">
         <ModalBody>
+          {/* Application Selection (only for creating) */}
+          {!isEditing && (
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Application *</span>
+              </label>
+              <Select
+                value={currentForm.values.application_id || ''}
+                onChange={(e) => currentForm.setValue('application_id', e.target.value)}
+                disabled={loadingApplications || loading}
+                placeholder={loadingApplications ? 'Loading applications...' : 'Select Application'}
+                options={applications.map(app => ({
+                  value: app.id,
+                  label: app.name,
+                }))}
+              />
+              {currentForm.touched.application_id && currentForm.errors.application_id && (
+                <label className="label">
+                  <span className="label-text-alt text-error">
+                    {currentForm.errors.application_id}
+                  </span>
+                </label>
+              )}
+            </div>
+          )}
+
           {/* Role Name */}
           <Input
             label="Role Name"
@@ -162,6 +197,21 @@ export const RoleForm: React.FC<RoleFormProps> = ({
               disabled={loading}
             />
           </div>
+
+          {/* Application info for editing */}
+          {isEditing && role && (
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text">Application</span>
+              </label>
+              <div className="flex items-center space-x-2 p-3 bg-base-200 rounded-lg">
+                <Building className="w-4 h-4 text-base-content/70" />
+                <span className="text-base-content">
+                  {applications.find(app => app.id === role.application_id)?.name || 'Unknown Application'}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Info for editing */}
           {isEditing && role && (
