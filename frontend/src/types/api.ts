@@ -311,3 +311,86 @@ export interface AuditLogOptionsResponse {
   options: AuditLogOptions;
   message?: string;
 }
+
+// Analytics types
+export interface AuthenticationAnalytics {
+  login_success_rate: number;
+  total_logins: number;
+  failed_logins: number;
+  unique_users: number;
+  login_trends: Array<{
+    date: string;
+    successful: number;
+    failed: number;
+  }>;
+  failure_reasons: Array<{
+    reason: string;
+    count: number;
+  }>;
+  peak_hours: Array<{
+    hour: number;
+    count: number;
+  }>;
+}
+
+export interface UserAnalytics {
+  total_users: number;
+  active_users: number;
+  new_users_trend: Array<{
+    date: string;
+    count: number;
+  }>;
+  role_distribution: Array<{
+    role: string;
+    count: number;
+  }>;
+  top_active_users: Array<{
+    user_id: string;
+    email: string;
+    name: string;
+    action_count: number;
+  }>;
+}
+
+export interface ApplicationAnalytics {
+  total_applications: number;
+  application_usage: Array<{
+    application_id: string;
+    name: string;
+    request_count: number;
+    user_count: number;
+  }>;
+  api_usage_trend: Array<{
+    date: string;
+    requests: number;
+  }>;
+  error_rates: Array<{
+    application: string;
+    error_rate: number;
+    total_requests: number;
+  }>;
+}
+
+export interface SecurityAnalytics {
+  suspicious_activities: number;
+  blocked_ips: number;
+  failed_login_ips: Array<{
+    ip_address: string;
+    attempts: number;
+    last_attempt: string;
+  }>;
+  permission_usage: Array<{
+    permission: string;
+    usage_count: number;
+  }>;
+  security_events_trend: Array<{
+    date: string;
+    events: number;
+  }>;
+}
+
+export interface AnalyticsTimeRange {
+  start_date: string;
+  end_date: string;
+  range: '24h' | '7d' | '30d' | '90d' | 'custom';
+}

@@ -10,6 +10,7 @@ import { ApplicationsPage } from './pages/applications';
 import { PermissionsPage } from './pages/permissions';
 import { RolesPage } from './pages/roles';
 import { AuditLogsPage } from './pages/audit';
+import { AnalyticsPage } from './pages/analytics';
 import './index.css';
 
 // Protected Route Component
@@ -121,6 +122,16 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <AuditLogsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Analytics Routes */}
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />
