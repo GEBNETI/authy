@@ -1,73 +1,98 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Building, Shield, Activity, TrendingUp, AlertCircle } from 'lucide-react';
 import { Card, CardBody, CardTitle } from '../../components/ui';
 import { useAuth } from '../../context';
+import { useUsers, useApplications, usePermissions, useAuditLogs } from '../../hooks';
+import { healthApi } from '../../services/api';
+import { formatUtils } from '../../utils';
+import type { HealthResponse } from '../../types';
 
 const DashboardPage: React.FC = () => {
   const { state } = useAuth();
+  const [healthStatus, setHealthStatus] = useState<HealthResponse | null>(null);
 
-  // Mock data for demo
+  // Fetch real data from APIs (we only need pagination data for counts)
+  const { pagination: usersPagination } = useUsers({ limit: 1 });
+  const { pagination: appsPagination } = useApplications({ limit: 1 });
+  const { pagination: permissionsPagination } = usePermissions({ limit: 1 });
+  const { auditLogs = [] } = useAuditLogs({ limit: 10, autoFetch: true }); // Recent activities
+
+  // Fetch health status
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const health = await healthApi.getHealth();
+        setHealthStatus(health);
+      } catch (error) {
+        console.error('Failed to fetch health status:', error);
+      }
+    };
+    fetchHealth();
+  }, []);
+
+  // Create stats from real data
   const stats = [
     {
       name: 'Total Users',
-      value: '1,234',
-      change: '+12%',
-      changeType: 'positive' as const,
+      value: usersPagination?.total?.toLocaleString() || '0',
       icon: Users,
     },
     {
       name: 'Applications',
-      value: '23',
-      change: '+2',
-      changeType: 'positive' as const,
+      value: appsPagination?.total?.toString() || '0',
       icon: Building,
     },
     {
       name: 'Permissions',
-      value: '156',
-      change: '+8%',
-      changeType: 'positive' as const,
+      value: permissionsPagination?.total?.toString() || '0',
       icon: Shield,
     },
     {
-      name: 'Active Sessions',
-      value: '847',
-      change: '-3%',
-      changeType: 'negative' as const,
+      name: 'Recent Logs',
+      value: auditLogs.length.toString(),
       icon: Activity,
     },
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      user: 'John Doe',
-      action: 'User logged in',
-      timestamp: '2 minutes ago',
-      type: 'login',
-    },
-    {
-      id: 2,
-      user: 'Jane Smith',
-      action: 'Created new application',
-      timestamp: '15 minutes ago',
-      type: 'create',
-    },
-    {
-      id: 3,
-      user: 'Admin',
-      action: 'Updated user permissions',
-      timestamp: '1 hour ago',
-      type: 'update',
-    },
-    {
-      id: 4,
-      user: 'Bob Johnson',
-      action: 'Failed login attempt',
-      timestamp: '2 hours ago',
-      type: 'error',
-    },
-  ];
+  // Helper functions for audit log conversion
+  const getActionDescription = (action: string, resource: string): string => {
+    const actionMap: Record<string, string> = {
+      'login': 'Logged in successfully',
+      'login_failed': 'Failed login attempt',
+      'logout': 'Logged out',
+      'user_create': 'Created a new user',
+      'user_update': 'Updated user information',
+      'user_delete': 'Deleted a user',
+      'application_create': 'Created new application',
+      'application_update': 'Updated application',
+      'application_delete': 'Deleted application',
+      'role_create': 'Created new role',
+      'role_update': 'Updated role',
+      'role_delete': 'Deleted role',
+      'role_assign': 'Assigned role to user',
+      'role_remove': 'Removed role from user',
+    };
+    
+    return actionMap[action] || `${action.replace('_', ' ')} on ${resource}`;
+  };
+
+  const getActivityType = (action: string): string => {
+    if (action.includes('login')) return 'login';
+    if (action.includes('create')) return 'create';
+    if (action.includes('update') || action.includes('assign') || action.includes('remove')) return 'update';
+    if (action.includes('delete')) return 'delete';
+    if (action.includes('failed')) return 'error';
+    return 'activity';
+  };
+
+  // Convert audit logs to recent activities
+  const recentActivities = auditLogs.slice(0, 6).map((log, index) => ({
+    id: index + 1,
+    user: log.user ? `${log.user.first_name} ${log.user.last_name}` : 'System',
+    action: getActionDescription(log.action, log.resource),
+    timestamp: formatUtils.formatRelativeTime(log.created_at),
+    type: getActivityType(log.action),
+  }));
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -77,11 +102,42 @@ const DashboardPage: React.FC = () => {
         return <TrendingUp className="w-4 h-4 text-primary" />;
       case 'update':
         return <Shield className="w-4 h-4 text-warning" />;
+      case 'delete':
+        return <AlertCircle className="w-4 h-4 text-error" />;
       case 'error':
         return <AlertCircle className="w-4 h-4 text-error" />;
       default:
         return <Activity className="w-4 h-4 text-base-content/70" />;
     }
+  };
+
+  // System status based on health check
+  const getSystemStatus = () => {
+    if (!healthStatus) {
+      return [
+        { name: 'Database', status: 'unknown', color: 'bg-warning' },
+        { name: 'Cache', status: 'unknown', color: 'bg-warning' },
+        { name: 'API', status: 'unknown', color: 'bg-warning' },
+      ];
+    }
+
+    return [
+      { 
+        name: 'Database', 
+        status: healthStatus.database || 'Connected', 
+        color: healthStatus.status === 'healthy' ? 'bg-success' : 'bg-error' 
+      },
+      { 
+        name: 'Cache', 
+        status: healthStatus.cache || 'Operational', 
+        color: healthStatus.status === 'healthy' ? 'bg-success' : 'bg-error' 
+      },
+      { 
+        name: 'API', 
+        status: healthStatus.status === 'healthy' ? 'Healthy' : 'Issues', 
+        color: healthStatus.status === 'healthy' ? 'bg-success' : 'bg-error' 
+      },
+    ];
   };
 
   return (
@@ -103,12 +159,6 @@ const DashboardPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-base-content/70">{stat.name}</p>
                   <p className="text-2xl font-bold text-base-content">{stat.value}</p>
-                  <p className={`text-sm flex items-center ${
-                    stat.changeType === 'positive' ? 'text-success' : 'text-error'
-                  }`}>
-                    {stat.change}
-                    <span className="ml-1">from last month</span>
-                  </p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <stat.icon className="w-6 h-6 text-primary" />
@@ -199,28 +249,27 @@ const DashboardPage: React.FC = () => {
         <CardBody>
           <CardTitle>System Status</CardTitle>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-3 p-3 bg-success/10 rounded-lg">
-              <div className="w-3 h-3 bg-success rounded-full"></div>
-              <div>
-                <p className="text-sm font-medium">Database</p>
-                <p className="text-xs text-base-content/70">Connected</p>
+            {getSystemStatus().map((system) => (
+              <div key={system.name} className={`flex items-center space-x-3 p-3 rounded-lg ${
+                system.color === 'bg-success' ? 'bg-success/10' : 
+                system.color === 'bg-error' ? 'bg-error/10' : 
+                'bg-warning/10'
+              }`}>
+                <div className={`w-3 h-3 rounded-full ${system.color}`}></div>
+                <div>
+                  <p className="text-sm font-medium">{system.name}</p>
+                  <p className="text-xs text-base-content/70">{system.status}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-3 p-3 bg-success/10 rounded-lg">
-              <div className="w-3 h-3 bg-success rounded-full"></div>
-              <div>
-                <p className="text-sm font-medium">Cache</p>
-                <p className="text-xs text-base-content/70">Operational</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 p-3 bg-success/10 rounded-lg">
-              <div className="w-3 h-3 bg-success rounded-full"></div>
-              <div>
-                <p className="text-sm font-medium">API</p>
-                <p className="text-xs text-base-content/70">Healthy</p>
-              </div>
-            </div>
+            ))}
           </div>
+          {healthStatus && (
+            <div className="mt-4 text-center">
+              <p className="text-xs text-base-content/50">
+                Service: {healthStatus.service} v{healthStatus.version}
+              </p>
+            </div>
+          )}
         </CardBody>
       </Card>
     </div>
