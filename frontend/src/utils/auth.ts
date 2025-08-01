@@ -105,6 +105,14 @@ export const userManager = {
 export const permissionUtils = {
   // Check if user has specific permission
   hasPermission: (user: User, resource: string, action: string): boolean => {
+    const permissionString = `${resource}:${action}`;
+    
+    // Check if user has permissions array from login response
+    if ((user as any).permissions && Array.isArray((user as any).permissions)) {
+      return (user as any).permissions.includes(permissionString);
+    }
+    
+    // Fallback to checking roles structure
     if (!user.roles || user.roles.length === 0) return false;
     
     return user.roles.some(userRole => {
@@ -132,6 +140,15 @@ export const permissionUtils = {
 
   // Get all user permissions
   getUserPermissions: (user: User): Array<{ resource: string; action: string }> => {
+    // Check if user has permissions array from login response
+    if ((user as any).permissions && Array.isArray((user as any).permissions)) {
+      return (user as any).permissions.map((permission: string) => {
+        const [resource, action] = permission.split(':');
+        return { resource, action };
+      });
+    }
+    
+    // Fallback to checking roles structure
     if (!user.roles || user.roles.length === 0) return [];
     
     const permissions: Array<{ resource: string; action: string }> = [];

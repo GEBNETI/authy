@@ -220,23 +220,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.success && response.data) {
         console.log('🚀 AUTH CONTEXT - Response is successful, extracting data');
-        const { token_pair, user } = response.data;
+        const { token_pair, user, permissions } = response.data;
         const { access_token, refresh_token } = token_pair;
+
+        // Add permissions to user object
+        const userWithPermissions = {
+          ...user,
+          permissions: permissions || []
+        };
 
         console.log('🚀 AUTH CONTEXT - Extracted tokens and user:', {
           access_token: access_token ? `${access_token.substring(0, 20)}...` : 'null',
           refresh_token: refresh_token ? `${refresh_token.substring(0, 20)}...` : 'null',
-          user: user
+          user: userWithPermissions,
+          permissions: permissions
         });
 
         // Store tokens and user
         tokenManager.setTokens(access_token, refresh_token);
-        userManager.setUser(user);
+        userManager.setUser(userWithPermissions);
 
         dispatch({
           type: 'LOGIN_SUCCESS',
           payload: {
-            user,
+            user: userWithPermissions,
             accessToken: access_token,
             refreshToken: refresh_token,
           },
