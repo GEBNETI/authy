@@ -95,6 +95,7 @@ export interface Role {
   id: string;
   name: string;
   description: string;
+  application_id: string;
   is_system: boolean;
   created_at: string;
   updated_at: string;
@@ -104,6 +105,7 @@ export interface Role {
 export interface CreateRoleRequest {
   name: string;
   description: string;
+  application_id: string;
   permission_ids?: string[];
 }
 
@@ -196,57 +198,6 @@ export interface RegenerateAPIKeyResponse {
   api_key: string;
 }
 
-// Audit Log types
-export interface AuditLog {
-  id: string;
-  user_id: string;
-  application_id: string;
-  action: string;
-  resource: string;
-  resource_id?: string;
-  details: Record<string, any>;
-  ip_address: string;
-  user_agent: string;
-  created_at: string;
-  user: User;
-  application: Application;
-}
-
-export interface AuditLogFilters {
-  user_id?: string;
-  application_id?: string;
-  action?: string;
-  resource?: string;
-  start_date?: string;
-  end_date?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface AuditStats {
-  total_actions: number;
-  unique_users: number;
-  actions_by_type: Record<string, number>;
-  actions_by_resource: Record<string, number>;
-  daily_activity: Array<{
-    date: string;
-    count: number;
-  }>;
-}
-
-export interface AuditOptions {
-  actions: string[];
-  resources: string[];
-  users: Array<{
-    id: string;
-    email: string;
-    full_name: string;
-  }>;
-  applications: Array<{
-    id: string;
-    name: string;
-  }>;
-}
 
 // Token types
 export interface Token {
@@ -274,4 +225,89 @@ export interface HealthResponse {
   version: string;
   database?: string;
   cache?: string;
+}
+
+// Audit Log types
+export interface AuditLog {
+  id: string;
+  user_id?: string;
+  application_id?: string;
+  action: string;
+  resource: string;
+  resource_id?: string;
+  details?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+  user?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+  };
+  application?: {
+    id: string;
+    name: string;
+    description: string;
+  };
+}
+
+export interface AuditLogFilters {
+  page?: number;
+  limit?: number;
+  user_id?: string;
+  application_id?: string;
+  action?: string;
+  resource?: string;
+  start_date?: string;
+  end_date?: string;
+  search?: string;
+}
+
+export interface AuditLogStats {
+  total_logs: number;
+  unique_users: number;
+  unique_applications: number;
+  top_actions: Array<{
+    action: string;
+    count: number;
+  }>;
+  recent_activity: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
+export interface AuditLogOptions {
+  actions: string[];
+  resources: string[];
+  applications: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
+// Response types
+export interface AuditLogsResponse {
+  success: boolean;
+  logs: AuditLog[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+  message?: string;
+}
+
+export interface AuditLogStatsResponse {
+  success: boolean;
+  stats: AuditLogStats;
+  message?: string;
+}
+
+export interface AuditLogOptionsResponse {
+  success: boolean;
+  options: AuditLogOptions;
+  message?: string;
 }

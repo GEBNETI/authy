@@ -17,7 +17,7 @@ type AuditLog struct {
 	Resource      string         `json:"resource" gorm:"not null;size:100"`
 	ResourceID    *string        `json:"resource_id" gorm:"size:255"`
 	Details       datatypes.JSON `json:"details" gorm:"type:jsonb;default:'{}'"`
-	IPAddress     *net.IP        `json:"ip_address" gorm:"type:inet"`
+	IPAddress     *string        `json:"ip_address" gorm:"type:inet"`
 	UserAgent     *string        `json:"user_agent" gorm:"type:text"`
 	CreatedAt     time.Time      `json:"created_at" gorm:"index:idx_audit_logs_created"`
 
@@ -85,13 +85,19 @@ func (al *AuditLog) GetDetails(destination interface{}) error {
 
 // CreateAuditLog creates a new audit log entry
 func CreateAuditLog(db *gorm.DB, userID *uuid.UUID, applicationID *uuid.UUID, action AuditAction, resource string, resourceID *string, details interface{}, ipAddress *net.IP, userAgent *string) error {
+	var ipStr *string
+	if ipAddress != nil {
+		str := ipAddress.String()
+		ipStr = &str
+	}
+	
 	auditLog := &AuditLog{
 		UserID:        userID,
 		ApplicationID: applicationID,
 		Action:        string(action),
 		Resource:      resource,
 		ResourceID:    resourceID,
-		IPAddress:     ipAddress,
+		IPAddress:     ipStr,
 		UserAgent:     userAgent,
 	}
 	
@@ -163,7 +169,7 @@ type AuditLogFilters struct {
 	Resource      string
 	StartDate     time.Time
 	EndDate       time.Time
-	IPAddress     *net.IP
+	IPAddress     *string
 }
 
 // GetAuditLogsByUser retrieves audit logs for a specific user

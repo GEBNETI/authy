@@ -225,8 +225,7 @@ func (s *AuditService) QueryLogs(query AuditLogQuery) ([]AuditLogResponse, int64
 
 		// Add IP address if present
 		if log.IPAddress != nil {
-			ipStr := log.IPAddress.String()
-			response.IPAddress = &ipStr
+			response.IPAddress = log.IPAddress
 		}
 
 		// Add user agent if present
@@ -244,12 +243,16 @@ func (s *AuditService) QueryLogs(query AuditLogQuery) ([]AuditLogResponse, int64
 
 		// Add user info if available
 		if log.User != nil {
+			fullName := ""
+			if log.User.FirstName != "" || log.User.LastName != "" {
+				fullName = log.User.GetFullName()
+			}
 			response.User = &UserInfo{
 				ID:        log.User.ID,
 				Email:     log.User.Email,
 				FirstName: log.User.FirstName,
 				LastName:  log.User.LastName,
-				FullName:  log.User.GetFullName(),
+				FullName:  fullName,
 			}
 		}
 

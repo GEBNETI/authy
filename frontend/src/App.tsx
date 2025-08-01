@@ -9,6 +9,7 @@ import { UsersPage } from './pages/users';
 import { ApplicationsPage } from './pages/applications';
 import { PermissionsPage } from './pages/permissions';
 import { RolesPage } from './pages/roles';
+import { AuditLogsPage } from './pages/audit';
 import './index.css';
 
 // Protected Route Component
@@ -119,10 +120,7 @@ const AppRouter: React.FC = () => {
           path="/audit"
           element={
             <ProtectedRoute>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Audit Logs</h1>
-                <p className="text-base-content/70 mt-2">Coming soon...</p>
-              </div>
+              <AuditLogsPage />
             </ProtectedRoute>
           }
         />

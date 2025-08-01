@@ -23,8 +23,8 @@ import type {
   PermissionsResponse,
   AuditLog,
   AuditLogFilters,
-  AuditStats,
-  AuditOptions,
+  AuditLogStats,
+  AuditLogOptions,
   PaginatedResponse,
   RegenerateAPIKeyResponse,
   HealthResponse
@@ -786,15 +786,115 @@ export const rolesApi = {
 };
 
 // Audit Logs API
-export const auditApi = {
-  getAuditLogs: (filters?: AuditLogFilters): Promise<APIResponse<PaginatedResponse<AuditLog>>> =>
-    request('GET', '/audit-logs', undefined, { params: filters }),
+export const auditLogsApi = {
+  getAuditLogs: async (filters?: AuditLogFilters): Promise<APIResponse<PaginatedResponse<AuditLog>>> => {
+    try {
+      console.log('📋 AUDIT API - getAuditLogs called with filters:', filters);
+      const response = await apiClient.get('/audit-logs', { params: filters });
+      console.log('📋 AUDIT API - Raw response:', response.data);
+      
+      const backendData = response.data;
+      if (backendData.success) {
+        // Transform backend response to expected frontend format
+        const transformedData: PaginatedResponse<AuditLog> = {
+          items: backendData.audit_logs || [],
+          total: backendData.pagination?.total || 0,
+          page: backendData.pagination?.page || 1,
+          limit: backendData.pagination?.per_page || 20,
+          totalPages: backendData.pagination?.total_pages || 0,
+        };
+        
+        const result: APIResponse<PaginatedResponse<AuditLog>> = {
+          success: true,
+          data: transformedData,
+          message: backendData.message,
+        };
+        
+        console.log('📋 AUDIT API - Transformed result:', result);
+        return result;
+      } else {
+        throw new Error(backendData.message || 'Failed to fetch audit logs');
+      }
+    } catch (error: any) {
+      console.error('❌ AUDIT API - Error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  getAuditStats: (filters?: Pick<AuditLogFilters, 'start_date' | 'end_date'>): Promise<APIResponse<AuditStats>> =>
-    request('GET', '/audit-logs/stats', undefined, { params: filters }),
+  getAuditLogStats: async (): Promise<APIResponse<AuditLogStats>> => {
+    try {
+      console.log('📊 AUDIT API - getAuditLogStats called');
+      const response = await apiClient.get('/audit-logs/stats');
+      console.log('📊 AUDIT API - Raw response:', response.data);
+      
+      const backendData = response.data;
+      if (backendData.success) {
+        const result: APIResponse<AuditLogStats> = {
+          success: true,
+          data: backendData.stats,
+          message: backendData.message,
+        };
+        
+        console.log('📊 AUDIT API - Transformed result:', result);
+        return result;
+      } else {
+        throw new Error(backendData.message || 'Failed to fetch audit stats');
+      }
+    } catch (error: any) {
+      console.error('❌ AUDIT API - Stats error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  getAuditOptions: (): Promise<APIResponse<AuditOptions>> =>
-    request('GET', '/audit-logs/options'),
+  getAuditLogOptions: async (): Promise<APIResponse<AuditLogOptions>> => {
+    try {
+      console.log('⚙️ AUDIT API - getAuditLogOptions called');
+      const response = await apiClient.get('/audit-logs/options');
+      console.log('⚙️ AUDIT API - Raw response:', response.data);
+      
+      const backendData = response.data;
+      if (backendData.success) {
+        // Transform backend response to expected frontend format
+        const transformedOptions: AuditLogOptions = {
+          actions: backendData.actions || [],
+          resources: backendData.resources || [],
+          applications: [] // Will be populated from applications API if needed
+        };
+        
+        const result: APIResponse<AuditLogOptions> = {
+          success: true,
+          data: transformedOptions,
+          message: backendData.message,
+        };
+        
+        console.log('⚙️ AUDIT API - Transformed result:', result);
+        return result;
+      } else {
+        throw new Error(backendData.message || 'Failed to fetch audit options');
+      }
+    } catch (error: any) {
+      console.error('❌ AUDIT API - Options error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
   exportAuditLogs: (filters?: AuditLogFilters): Promise<Blob> =>
     apiClient.get('/audit-logs/export', { 

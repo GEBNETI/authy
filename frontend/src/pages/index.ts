@@ -4,3 +4,4 @@ export * from './users';
 export * from './applications';
 export * from './permissions';
 export * from './roles';
+export * from './audit';
