@@ -111,6 +111,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(db, cache, log, sessionService)
 	appHandler := handlers.NewApplicationHandler(db, cache, log)
 	permissionHandler := handlers.NewPermissionHandler(db, log)
+	roleHandler := handlers.NewRoleHandler(db, log)
 	auditHandler := handlers.NewAuditHandler(auditService)
 	
 	// Auth routes (with rate limiting)
@@ -149,6 +150,16 @@ func main() {
 	permissions.Post("/", middleware.RequirePermission("permissions", "create"), permissionHandler.CreatePermission)
 	permissions.Get("/:id", middleware.RequirePermission("permissions", "read"), permissionHandler.GetPermission)
 	permissions.Delete("/:id", middleware.RequirePermission("permissions", "delete"), permissionHandler.DeletePermission)
+	
+	// Role routes (require authentication)
+	roles := api.Group("/roles")
+	roles.Use(middleware.AuthRequired(sessionService))
+	roles.Get("/", middleware.RequirePermission("roles", "list"), roleHandler.GetRoles)
+	roles.Post("/", middleware.RequirePermission("roles", "create"), roleHandler.CreateRole)
+	roles.Get("/:id", middleware.RequirePermission("roles", "read"), roleHandler.GetRole)
+	roles.Put("/:id", middleware.RequirePermission("roles", "update"), roleHandler.UpdateRole)
+	roles.Delete("/:id", middleware.RequirePermission("roles", "delete"), roleHandler.DeleteRole)
+	roles.Post("/:id/permissions", middleware.RequirePermission("roles", "update"), roleHandler.AssignPermissions)
 	
 	// Audit log routes (require authentication and audit permissions)
 	auditLogs := api.Group("/audit-logs")

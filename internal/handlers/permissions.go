@@ -86,7 +86,7 @@ func (h *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
+	if perPage < 1 || perPage > 10000 {
 		perPage = 10
 	}
 

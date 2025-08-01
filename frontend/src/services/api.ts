@@ -12,9 +12,15 @@ import type {
   Application,
   CreateApplicationRequest,
   UpdateApplicationRequest,
+  ApplicationsResponse,
+  Role,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+  RolesResponse,
   Permission,
   CreatePermissionRequest,
   UpdatePermissionRequest,
+  PermissionsResponse,
   AuditLog,
   AuditLogFilters,
   AuditStats,
@@ -242,7 +248,7 @@ export const usersApi = {
   getUser: async (id: string): Promise<APIResponse<User>> => {
     console.log('👤 USERS API - getUser called with id:', id);
     try {
-      const result = await request('GET', `/users/${id}`);
+      const result = await request<User>('GET', `/users/${id}`);
       console.log('👤 USERS API - getUser result:', JSON.stringify(result, null, 2));
       return result;
     } catch (error) {
@@ -308,7 +314,7 @@ export const usersApi = {
   deleteUser: async (id: string): Promise<APIResponse<void>> => {
     console.log('🗑️ USERS API - deleteUser called with id:', id);
     try {
-      const result = await request('DELETE', `/users/${id}`);
+      const result = await request<void>('DELETE', `/users/${id}`);
       console.log('🗑️ USERS API - deleteUser result:', JSON.stringify(result, null, 2));
       return result;
     } catch (error) {
@@ -326,24 +332,142 @@ export const usersApi = {
 
 // Applications API
 export const applicationsApi = {
-  getApplications: (params?: {
+  getApplications: async (params?: {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<APIResponse<PaginatedResponse<Application>>> =>
-    request('GET', '/applications', undefined, { params }),
+  }): Promise<APIResponse<PaginatedResponse<Application>>> => {
+    console.log('🏢 APPLICATIONS API - getApplications called with params:', params);
+    
+    try {
+      const response: AxiosResponse<ApplicationsResponse> = await apiClient.get('/applications', { params });
+      console.log('🏢 APPLICATIONS API - Raw response:', JSON.stringify(response.data, null, 2));
+      
+      // Backend returns: { success: true, applications: [...], pagination: {...} }
+      // Frontend expects: APIResponse<PaginatedResponse<Application>>
+      const backendData = response.data;
+      
+      if (backendData.success && backendData.applications) {
+        const transformedData: PaginatedResponse<Application> = {
+          items: backendData.applications,
+          total: backendData.pagination.total,
+          page: backendData.pagination.page,
+          limit: backendData.pagination.per_page,
+          totalPages: backendData.pagination.total_pages,
+        };
+        
+        const result: APIResponse<PaginatedResponse<Application>> = {
+          success: true,
+          data: transformedData,
+          message: backendData.message,
+        };
+        
+        console.log('🏢 APPLICATIONS API - Transformed result:', JSON.stringify(result, null, 2));
+        return result;
+      } else {
+        throw new Error(backendData.message || 'Failed to fetch applications');
+      }
+    } catch (error: any) {
+      console.error('❌ APPLICATIONS API - Error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  getApplication: (id: string): Promise<APIResponse<Application>> =>
-    request('GET', `/applications/${id}`),
+  getApplication: async (id: string): Promise<APIResponse<Application>> => {
+    console.log('🏢 APPLICATIONS API - getApplication called with id:', id);
+    try {
+      const response: AxiosResponse<Application> = await apiClient.get(`/applications/${id}`);
+      console.log('🏢 APPLICATIONS API - getApplication raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Application> = {
+        success: true,
+        data: response.data,
+        message: 'Application retrieved successfully',
+      };
+      
+      console.log('🏢 APPLICATIONS API - getApplication result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ APPLICATIONS API - getApplication error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  createApplication: (data: CreateApplicationRequest): Promise<APIResponse<Application>> =>
-    request('POST', '/applications', data),
+  createApplication: async (data: CreateApplicationRequest): Promise<APIResponse<Application>> => {
+    console.log('➕ APPLICATIONS API - createApplication called with data:', JSON.stringify(data, null, 2));
+    try {
+      const response: AxiosResponse<Application> = await apiClient.post('/applications', data);
+      console.log('➕ APPLICATIONS API - createApplication raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Application> = {
+        success: true,
+        data: response.data,
+        message: 'Application created successfully',
+      };
+      
+      console.log('➕ APPLICATIONS API - createApplication result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ APPLICATIONS API - createApplication error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  updateApplication: (id: string, data: UpdateApplicationRequest): Promise<APIResponse<Application>> =>
-    request('PUT', `/applications/${id}`, data),
+  updateApplication: async (id: string, data: UpdateApplicationRequest): Promise<APIResponse<Application>> => {
+    console.log('✏️ APPLICATIONS API - updateApplication called with id:', id, 'data:', JSON.stringify(data, null, 2));
+    try {
+      const response: AxiosResponse<Application> = await apiClient.put(`/applications/${id}`, data);
+      console.log('✏️ APPLICATIONS API - updateApplication raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Application> = {
+        success: true,
+        data: response.data,
+        message: 'Application updated successfully',
+      };
+      
+      console.log('✏️ APPLICATIONS API - updateApplication result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ APPLICATIONS API - updateApplication error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  deleteApplication: (id: string): Promise<APIResponse<void>> =>
-    request('DELETE', `/applications/${id}`),
+  deleteApplication: async (id: string): Promise<APIResponse<void>> => {
+    console.log('🗑️ APPLICATIONS API - deleteApplication called with id:', id);
+    try {
+      const result = await request<void>('DELETE', `/applications/${id}`);
+      console.log('🗑️ APPLICATIONS API - deleteApplication result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error('❌ APPLICATIONS API - deleteApplication error:', error);
+      throw error;
+    }
+  },
 
   regenerateAPIKey: (id: string): Promise<APIResponse<RegenerateAPIKeyResponse>> =>
     request('POST', `/applications/${id}/regenerate-key`),
@@ -351,24 +475,314 @@ export const applicationsApi = {
 
 // Permissions API
 export const permissionsApi = {
-  getPermissions: (params?: {
+  getPermissions: async (params?: {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<APIResponse<PaginatedResponse<Permission>>> =>
-    request('GET', '/permissions', undefined, { params }),
+  }): Promise<APIResponse<PaginatedResponse<Permission>>> => {
+    console.log('🔒 PERMISSIONS API - getPermissions called with params:', params);
+    
+    try {
+      // Transform frontend params to backend format
+      const backendParams = {
+        page: params?.page,
+        per_page: params?.limit, // Backend expects 'per_page' not 'limit'
+        search: params?.search,
+      };
+      const response: AxiosResponse<PermissionsResponse> = await apiClient.get('/permissions', { params: backendParams });
+      console.log('🔒 PERMISSIONS API - Raw response:', JSON.stringify(response.data, null, 2));
+      
+      // Backend returns: { success: true, permissions: [...], pagination: {...} }
+      // Frontend expects: APIResponse<PaginatedResponse<Permission>>
+      const backendData = response.data;
+      
+      if (backendData.success && backendData.permissions) {
+        const transformedData: PaginatedResponse<Permission> = {
+          items: backendData.permissions,
+          total: backendData.pagination.total,
+          page: backendData.pagination.page,
+          limit: backendData.pagination.per_page,
+          totalPages: backendData.pagination.total_pages,
+        };
+        
+        const result: APIResponse<PaginatedResponse<Permission>> = {
+          success: true,
+          data: transformedData,
+          message: backendData.message,
+        };
+        
+        console.log('🔒 PERMISSIONS API - Transformed result:', JSON.stringify(result, null, 2));
+        return result;
+      } else {
+        throw new Error(backendData.message || 'Failed to fetch permissions');
+      }
+    } catch (error: any) {
+      console.error('❌ PERMISSIONS API - Error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  getPermission: (id: string): Promise<APIResponse<Permission>> =>
-    request('GET', `/permissions/${id}`),
+  getPermission: async (id: string): Promise<APIResponse<Permission>> => {
+    console.log('🔒 PERMISSIONS API - getPermission called with id:', id);
+    try {
+      const response: AxiosResponse<Permission> = await apiClient.get(`/permissions/${id}`);
+      console.log('🔒 PERMISSIONS API - getPermission raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Permission> = {
+        success: true,
+        data: response.data,
+        message: 'Permission retrieved successfully',
+      };
+      
+      console.log('🔒 PERMISSIONS API - getPermission result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ PERMISSIONS API - getPermission error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  createPermission: (data: CreatePermissionRequest): Promise<APIResponse<Permission>> =>
-    request('POST', '/permissions', data),
+  createPermission: async (data: CreatePermissionRequest): Promise<APIResponse<Permission>> => {
+    console.log('➕ PERMISSIONS API - createPermission called with data:', JSON.stringify(data, null, 2));
+    try {
+      const response: AxiosResponse<Permission> = await apiClient.post('/permissions', data);
+      console.log('➕ PERMISSIONS API - createPermission raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Permission> = {
+        success: true,
+        data: response.data,
+        message: 'Permission created successfully',
+      };
+      
+      console.log('➕ PERMISSIONS API - createPermission result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ PERMISSIONS API - createPermission error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  updatePermission: (id: string, data: UpdatePermissionRequest): Promise<APIResponse<Permission>> =>
-    request('PUT', `/permissions/${id}`, data),
+  updatePermission: async (id: string, data: UpdatePermissionRequest): Promise<APIResponse<Permission>> => {
+    console.log('✏️ PERMISSIONS API - updatePermission called with id:', id, 'data:', JSON.stringify(data, null, 2));
+    try {
+      const response: AxiosResponse<Permission> = await apiClient.put(`/permissions/${id}`, data);
+      console.log('✏️ PERMISSIONS API - updatePermission raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Permission> = {
+        success: true,
+        data: response.data,
+        message: 'Permission updated successfully',
+      };
+      
+      console.log('✏️ PERMISSIONS API - updatePermission result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ PERMISSIONS API - updatePermission error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 
-  deletePermission: (id: string): Promise<APIResponse<void>> =>
-    request('DELETE', `/permissions/${id}`),
+  deletePermission: async (id: string): Promise<APIResponse<void>> => {
+    console.log('🗑️ PERMISSIONS API - deletePermission called with id:', id);
+    try {
+      const result = await request<void>('DELETE', `/permissions/${id}`);
+      console.log('🗑️ PERMISSIONS API - deletePermission result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error('❌ PERMISSIONS API - deletePermission error:', error);
+      throw error;
+    }
+  },
+};
+
+// Roles API
+export const rolesApi = {
+  getRoles: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<APIResponse<PaginatedResponse<Role>>> => {
+    console.log('👑 ROLES API - getRoles called with params:', params);
+    
+    try {
+      const response: AxiosResponse<RolesResponse> = await apiClient.get('/roles', { params });
+      console.log('👑 ROLES API - Raw response:', JSON.stringify(response.data, null, 2));
+      
+      // Backend returns: { success: true, roles: [...], pagination: {...} }
+      // Frontend expects: APIResponse<PaginatedResponse<Role>>
+      const backendData = response.data;
+      
+      if (backendData.success && backendData.roles) {
+        const transformedData: PaginatedResponse<Role> = {
+          items: backendData.roles,
+          total: backendData.pagination.total,
+          page: backendData.pagination.page,
+          limit: backendData.pagination.per_page,
+          totalPages: backendData.pagination.total_pages,
+        };
+        
+        const result: APIResponse<PaginatedResponse<Role>> = {
+          success: true,
+          data: transformedData,
+          message: backendData.message,
+        };
+        
+        console.log('👑 ROLES API - Transformed result:', JSON.stringify(result, null, 2));
+        return result;
+      } else {
+        throw new Error(backendData.message || 'Failed to fetch roles');
+      }
+    } catch (error: any) {
+      console.error('❌ ROLES API - Error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
+
+  getRole: async (id: string): Promise<APIResponse<Role>> => {
+    console.log('👑 ROLES API - getRole called with id:', id);
+    try {
+      const response: AxiosResponse<Role> = await apiClient.get(`/roles/${id}`);
+      console.log('👑 ROLES API - getRole raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Role> = {
+        success: true,
+        data: response.data,
+        message: 'Role retrieved successfully',
+      };
+      
+      console.log('👑 ROLES API - getRole result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ ROLES API - getRole error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
+
+  createRole: async (data: CreateRoleRequest): Promise<APIResponse<Role>> => {
+    console.log('➕ ROLES API - createRole called with data:', JSON.stringify(data, null, 2));
+    try {
+      const response: AxiosResponse<Role> = await apiClient.post('/roles', data);
+      console.log('➕ ROLES API - createRole raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Role> = {
+        success: true,
+        data: response.data,
+        message: 'Role created successfully',
+      };
+      
+      console.log('➕ ROLES API - createRole result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ ROLES API - createRole error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
+
+  updateRole: async (id: string, data: UpdateRoleRequest): Promise<APIResponse<Role>> => {
+    console.log('✏️ ROLES API - updateRole called with id:', id, 'data:', JSON.stringify(data, null, 2));
+    try {
+      const response: AxiosResponse<Role> = await apiClient.put(`/roles/${id}`, data);
+      console.log('✏️ ROLES API - updateRole raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Role> = {
+        success: true,
+        data: response.data,
+        message: 'Role updated successfully',
+      };
+      
+      console.log('✏️ ROLES API - updateRole result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ ROLES API - updateRole error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
+
+  deleteRole: async (id: string): Promise<APIResponse<void>> => {
+    console.log('🗑️ ROLES API - deleteRole called with id:', id);
+    try {
+      const result = await request<void>('DELETE', `/roles/${id}`);
+      console.log('🗑️ ROLES API - deleteRole result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error('❌ ROLES API - deleteRole error:', error);
+      throw error;
+    }
+  },
+
+  assignPermissions: async (roleId: string, permissionIds: string[]): Promise<APIResponse<Role>> => {
+    console.log('🔗 ROLES API - assignPermissions called with roleId:', roleId, 'permissionIds:', permissionIds);
+    try {
+      const response: AxiosResponse<Role> = await apiClient.put(`/roles/${roleId}`, { permission_ids: permissionIds });
+      console.log('🔗 ROLES API - assignPermissions raw response:', JSON.stringify(response.data, null, 2));
+      
+      const result: APIResponse<Role> = {
+        success: true,
+        data: response.data,
+        message: 'Permissions assigned successfully',
+      };
+      
+      console.log('🔗 ROLES API - assignPermissions result:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error('❌ ROLES API - assignPermissions error:', error);
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw {
+        success: false,
+        error: error.message || 'Network error occurred',
+      };
+    }
+  },
 };
 
 // Audit Logs API

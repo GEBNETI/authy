@@ -22,7 +22,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginPage: React.FC = () => {
-  const { login, state, clearError } = useAuth();
+  const { login, clearError } = useAuth();
   const { addNotification } = useNotification();
   const [showPassword, setShowPassword] = React.useState(false);
 

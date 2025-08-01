@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Users, 
@@ -8,7 +9,8 @@ import {
   Settings,
   X,
   ChevronDown,
-  BarChart3
+  BarChart3,
+  UserCheck
 } from 'lucide-react';
 import { useAuth } from '../../context';
 import { permissionUtils } from '../../utils';
@@ -22,7 +24,6 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  current?: boolean;
   permission?: {
     resource: string;
     action: string;
@@ -32,6 +33,7 @@ interface NavItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { state } = useAuth();
+  const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
 
   // Navigation items
@@ -40,7 +42,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       name: 'Dashboard',
       href: '/',
       icon: Home,
-      current: true,
     },
     {
       name: 'Users',
@@ -59,6 +60,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       href: '/permissions',
       icon: Shield,
       permission: { resource: 'permissions', action: 'list' },
+    },
+    {
+      name: 'Roles',
+      href: '/roles',
+      icon: UserCheck,
+      permission: { resource: 'roles', action: 'list' },
     },
     {
       name: 'Audit Logs',
@@ -87,6 +94,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       item.permission.resource,
       item.permission.action
     );
+  };
+
+  // Check if a nav item is currently active
+  const isActive = (href: string): boolean => {
+    if (href === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(href);
   };
 
   // Toggle expanded state
@@ -147,32 +162,39 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
             return (
               <div key={item.name}>
-                <a
-                  href={item.href}
-                  className={`group flex items-center justify-between px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    item.current
-                      ? 'bg-primary text-primary-content'
-                      : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
-                  }`}
-                  onClick={(e) => {
-                    if (hasChildren) {
-                      e.preventDefault();
-                      toggleExpanded(item.name);
-                    }
-                  }}
-                >
-                  <div className="flex items-center">
-                    <item.icon className="w-5 h-5 mr-3" />
-                    {item.name}
-                  </div>
-                  {hasChildren && (
+                {hasChildren ? (
+                  <button
+                    className={`w-full group flex items-center justify-between px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                      isActive(item.href)
+                        ? 'bg-primary text-primary-content'
+                        : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                    }`}
+                    onClick={() => toggleExpanded(item.name)}
+                  >
+                    <div className="flex items-center">
+                      <item.icon className="w-5 h-5 mr-3" />
+                      {item.name}
+                    </div>
                     <ChevronDown
                       className={`w-4 h-4 transition-transform ${
                         isExpanded ? 'rotate-180' : ''
                       }`}
                     />
-                  )}
-                </a>
+                  </button>
+                ) : (
+                  <Link
+                    to={item.href}
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                      isActive(item.href)
+                        ? 'bg-primary text-primary-content'
+                        : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                    }`}
+                    onClick={onClose}
+                  >
+                    <item.icon className="w-5 h-5 mr-3" />
+                    {item.name}
+                  </Link>
+                )}
 
                 {/* Submenu */}
                 {hasChildren && isExpanded && (
@@ -181,18 +203,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       if (!hasPermission(child)) return null;
 
                       return (
-                        <a
+                        <Link
                           key={child.name}
-                          href={child.href}
+                          to={child.href}
                           className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                            child.current
+                            isActive(child.href)
                               ? 'bg-primary/10 text-primary'
                               : 'text-base-content/60 hover:bg-base-200 hover:text-base-content'
                           }`}
+                          onClick={onClose}
                         >
                           <child.icon className="w-4 h-4 mr-3" />
                           {child.name}
-                        </a>
+                        </Link>
                       );
                     })}
                   </div>

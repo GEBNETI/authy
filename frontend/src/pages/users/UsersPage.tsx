@@ -40,7 +40,6 @@ const UsersPage: React.FC = () => {
     setPage,
     createUser,
     updateUser,
-    deleteUser,
   } = useUsers();
 
   // Debounced search

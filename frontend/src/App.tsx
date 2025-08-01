@@ -1,11 +1,14 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, ThemeProvider, NotificationProvider } from './context';
 import { useAuth } from './context';
 import { MainLayout } from './components/layout';
 import { LoginPage } from './pages/auth';
 import { DashboardPage } from './pages/dashboard';
 import { UsersPage } from './pages/users';
+import { ApplicationsPage } from './pages/applications';
+import { PermissionsPage } from './pages/permissions';
+import { RolesPage } from './pages/roles';
 import './index.css';
 
 // Protected Route Component
@@ -86,10 +89,7 @@ const AppRouter: React.FC = () => {
           path="/applications"
           element={
             <ProtectedRoute>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Applications Management</h1>
-                <p className="text-base-content/70 mt-2">Coming soon...</p>
-              </div>
+              <ApplicationsPage />
             </ProtectedRoute>
           }
         />
@@ -99,10 +99,17 @@ const AppRouter: React.FC = () => {
           path="/permissions"
           element={
             <ProtectedRoute>
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Permissions Management</h1>
-                <p className="text-base-content/70 mt-2">Coming soon...</p>
-              </div>
+              <PermissionsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Roles Routes */}
+        <Route
+          path="/roles"
+          element={
+            <ProtectedRoute>
+              <RolesPage />
             </ProtectedRoute>
           }
         />
@@ -141,9 +148,9 @@ const AppRouter: React.FC = () => {
               <div className="text-center">
                 <h1 className="text-4xl font-bold text-error">404</h1>
                 <p className="text-base-content/70 mt-2">Page not found</p>
-                <a href="/" className="btn btn-primary mt-4">
+                <Link to="/" className="btn btn-primary mt-4">
                   Go Home
-                </a>
+                </Link>
               </div>
             </div>
           }

@@ -113,6 +113,18 @@ export interface UpdateRoleRequest {
   permission_ids?: string[];
 }
 
+export interface RolesResponse {
+  success: boolean;
+  message?: string;
+  roles: Role[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
 // Permission types
 export interface Permission {
   id: string;
@@ -136,13 +148,23 @@ export interface UpdatePermissionRequest {
   description?: string;
 }
 
+export interface PermissionsResponse {
+  success: boolean;
+  message?: string;
+  permissions: Permission[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
 // Application types
 export interface Application {
   id: string;
   name: string;
   description: string;
-  api_key: string;
-  is_active: boolean;
   is_system: boolean;
   created_at: string;
   updated_at: string;
@@ -151,13 +173,23 @@ export interface Application {
 export interface CreateApplicationRequest {
   name: string;
   description: string;
-  is_active?: boolean;
 }
 
 export interface UpdateApplicationRequest {
   name?: string;
   description?: string;
-  is_active?: boolean;
+}
+
+export interface ApplicationsResponse {
+  success: boolean;
+  message?: string;
+  applications: Application[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
 }
 
 export interface RegenerateAPIKeyResponse {
