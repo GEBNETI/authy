@@ -5,7 +5,6 @@ import {
   Trash2, 
   Building,
   Search,
-  X,
   UserCheck
 } from 'lucide-react';
 import { 
@@ -20,7 +19,7 @@ import {
 import { useApplications, useRoles } from '../../hooks';
 import { useNotification } from '../../context';
 import { usersApi } from '../../services/api';
-import type { User, Role, Application } from '../../types';
+import type { User, Application } from '../../types';
 
 interface UserRolesModalProps {
   isOpen: boolean;
@@ -256,7 +255,7 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   icon={Search}
-                  size="sm"
+                  inputSize="sm"
                 />
               </div>
             </div>
@@ -305,9 +304,9 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
                               <Badge variant="info" size="xs">
                                 {userRole.role.permissions?.length || 0} permissions
                               </Badge>
-                              {userRole.granted_at && (
+                              {userRole.created_at && (
                                 <span className="text-xs text-base-content/50">
-                                  Granted {new Date(userRole.granted_at).toLocaleDateString()}
+                                  Granted {new Date(userRole.created_at).toLocaleDateString()}
                                 </span>
                               )}
                             </div>
