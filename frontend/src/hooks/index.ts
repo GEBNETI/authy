@@ -6,3 +6,4 @@ export { useAllPermissions } from './useAllPermissions';
 export { useRoles } from './useRoles';
 export { useAuditLogs } from './useAuditLogs';
 export { useFilters } from './useFilters';
+export { useAnalytics } from './useAnalytics';

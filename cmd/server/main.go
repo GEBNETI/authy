@@ -113,6 +113,7 @@ func main() {
 	permissionHandler := handlers.NewPermissionHandler(db, log)
 	roleHandler := handlers.NewRoleHandler(db, log)
 	auditHandler := handlers.NewAuditHandler(auditService)
+	analyticsHandler := handlers.NewAnalyticsHandler(db, log)
 	
 	// Auth routes (with rate limiting)
 	auth := api.Group("/auth")
@@ -168,6 +169,14 @@ func main() {
 	auditLogs.Get("/stats", middleware.RequirePermission("system", "audit"), auditHandler.GetAuditStats)
 	auditLogs.Get("/export", middleware.RequirePermission("system", "audit"), auditHandler.ExportAuditLogs)
 	auditLogs.Get("/options", middleware.RequirePermission("system", "audit"), auditHandler.GetAuditOptions)
+	
+	// Analytics routes (require authentication and audit permissions)
+	analytics := api.Group("/analytics")
+	analytics.Use(middleware.AuthRequired(sessionService))
+	analytics.Get("/authentication", middleware.RequirePermission("system", "audit"), analyticsHandler.GetAuthenticationAnalytics)
+	analytics.Get("/users", middleware.RequirePermission("system", "audit"), analyticsHandler.GetUserAnalytics)
+	analytics.Get("/applications", middleware.RequirePermission("system", "audit"), analyticsHandler.GetApplicationAnalytics)
+	analytics.Get("/security", middleware.RequirePermission("system", "audit"), analyticsHandler.GetSecurityAnalytics)
 	
 	// Start server
 	port := os.Getenv("PORT")
