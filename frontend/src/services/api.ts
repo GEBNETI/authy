@@ -27,7 +27,12 @@ import type {
   AuditLogOptions,
   PaginatedResponse,
   RegenerateAPIKeyResponse,
-  HealthResponse
+  HealthResponse,
+  AnalyticsTimeRange,
+  AuthenticationAnalytics,
+  UserAnalytics,
+  ApplicationAnalytics,
+  SecurityAnalytics
 } from '../types/api';
 
 // Create axios instance with default configuration
