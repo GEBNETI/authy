@@ -7,31 +7,20 @@ interface PermissionSelectorProps {
   selectedPermissionIds: string[];
   onPermissionsChange: (permissionIds: string[]) => void;
   disabled?: boolean;
+  originalPermissionIds?: string[]; // To show what has changed
 }
 
 export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
   selectedPermissionIds,
   onPermissionsChange,
   disabled = false,
+  originalPermissionIds = [],
 }) => {
-  console.log('🎯 PermissionSelector - Received selectedPermissionIds:', selectedPermissionIds);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedResource, setSelectedResource] = useState<string>('all');
 
   // Use the dedicated hook to get ALL permissions without pagination
   const { permissions, loading, error } = useAllPermissions();
-
-  // Debug logging for permissions and selection
-  React.useEffect(() => {
-    console.log('🎯 PermissionSelector - Permissions loaded:', {
-      count: permissions.length,
-      loading,
-      error,
-      selectedCount: selectedPermissionIds.length,
-      selectedIds: selectedPermissionIds,
-      permissions: permissions.slice(0, 5).map(p => ({ id: p.id, resource: p.resource, action: p.action })) // Log first 5 for debugging
-    });
-  }, [permissions, loading, error, selectedPermissionIds]);
 
   // Filter permissions based on search and resource
   const filteredPermissions = permissions.filter(permission => {
@@ -92,6 +81,11 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
   const allFilteredSelected = filteredPermissions.length > 0 && 
     filteredPermissions.every(p => selectedPermissionIds.includes(p.id));
 
+  // Check if there are unsaved changes
+  const hasChanges = originalPermissionIds.length !== selectedPermissionIds.length ||
+    !originalPermissionIds.every(id => selectedPermissionIds.includes(id)) ||
+    !selectedPermissionIds.every(id => originalPermissionIds.includes(id));
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -99,8 +93,15 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
         <h3 className="text-lg font-medium text-base-content">
           Assign Permissions
         </h3>
-        <div className="text-sm text-base-content/70">
-          {selectedPermissionIds.length} of {permissions.length} selected
+        <div className="flex items-center space-x-2">
+          {hasChanges && (
+            <Badge variant="warning" size="sm">
+              Unsaved Changes
+            </Badge>
+          )}
+          <div className="text-sm text-base-content/70">
+            {selectedPermissionIds.length} of {permissions.length} selected
+          </div>
         </div>
       </div>
 
@@ -165,17 +166,6 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
           <div className="divide-y divide-base-300">
             {filteredPermissions.map((permission) => {
               const isSelected = selectedPermissionIds.includes(permission.id);
-              
-              // Debug logging for selection checking
-              if (selectedPermissionIds.length > 0) {
-                console.log('🔍 PermissionSelector - Selection check:', {
-                  permissionId: permission.id,
-                  permissionName: `${permission.resource}:${permission.action}`,
-                  isSelected,
-                  selectedIds: selectedPermissionIds,
-                  includes: selectedPermissionIds.includes(permission.id)
-                });
-              }
               
               return (
                 <div

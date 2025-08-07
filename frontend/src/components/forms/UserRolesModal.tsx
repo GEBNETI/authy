@@ -25,7 +25,7 @@ interface UserRolesModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onRolesUpdated?: () => void;
+  onRolesUpdated?: (updatedUser: User) => void;
 }
 
 export const UserRolesModal: React.FC<UserRolesModalProps> = ({
@@ -38,6 +38,7 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const { addNotification } = useNotification();
   
@@ -59,6 +60,11 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
     }
   }, [selectedApplicationId, refetchRoles]);
   
+  // Update current user when prop changes
+  useEffect(() => {
+    setCurrentUser(user);
+  }, [user]);
+  
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
@@ -69,15 +75,15 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
   }, [isOpen]);
   
   // Filter user's current roles by search term
-  const filteredUserRoles = user?.roles?.filter(userRole => {
+  const filteredUserRoles = currentUser?.roles?.filter(userRole => {
     const matchesSearch = !searchTerm || 
-      userRole.role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      userRole.role.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      userRole.role_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      userRole.application.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   }) || [];
   
   // Filter available roles (exclude already assigned roles)
-  const assignedRoleIds = user?.roles?.map(ur => ur.role.id) || [];
+  const assignedRoleIds = currentUser?.roles?.map(ur => ur.role_id) || [];
   const availableRoles = roles.filter(role => 
     role.application_id === selectedApplicationId && 
     !assignedRoleIds.includes(role.id)
@@ -85,11 +91,11 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
   
   // Handle assign role
   const handleAssignRole = async () => {
-    if (!user || !selectedRoleId || !selectedApplicationId) return;
+    if (!currentUser || !selectedRoleId || !selectedApplicationId) return;
     
     setLoading(true);
     try {
-      await usersApi.assignRole(user.id, {
+      await usersApi.assignRole(currentUser.id, {
         role_id: selectedRoleId,
         application_id: selectedApplicationId,
       });
@@ -104,9 +110,10 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
       setSelectedRoleId('');
       setSelectedApplicationId('');
       
-      // Callback to refresh user data
+      // Trigger parent to refresh and update user data
+      // This will get ALL user roles across applications, not just current app
       if (onRolesUpdated) {
-        onRolesUpdated();
+        onRolesUpdated(currentUser); // Parent will refetch and update
       }
     } catch (error: any) {
       addNotification({
@@ -121,11 +128,11 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
   
   // Handle remove role
   const handleRemoveRole = async (roleId: string) => {
-    if (!user) return;
+    if (!currentUser) return;
     
     setLoading(true);
     try {
-      await usersApi.removeRole(user.id, roleId);
+      await usersApi.removeRole(currentUser.id, roleId);
       
       addNotification({
         type: 'success',
@@ -133,9 +140,10 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
         message: 'Role has been removed successfully.',
       });
       
-      // Callback to refresh user data
+      // Trigger parent to refresh and update user data
+      // This will get ALL user roles across applications, not just current app
       if (onRolesUpdated) {
-        onRolesUpdated();
+        onRolesUpdated(currentUser); // Parent will refetch and update
       }
     } catch (error: any) {
       addNotification({
@@ -161,7 +169,7 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
     return acc;
   }, {} as Record<string, { application?: Application; roles: typeof filteredUserRoles }>);
   
-  if (!user) return null;
+  if (!currentUser) return null;
   
   return (
     <Modal
@@ -180,9 +188,9 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
               </div>
               <div>
                 <h3 className="font-medium text-base-content">
-                  {user.first_name} {user.last_name}
+                  {currentUser.first_name} {currentUser.last_name}
                 </h3>
-                <p className="text-sm text-base-content/70">{user.email}</p>
+                <p className="text-sm text-base-content/70">{currentUser.email}</p>
               </div>
             </div>
           </div>
@@ -283,30 +291,19 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
                     <div className="space-y-2">
                       {roles.map(userRole => (
                         <div 
-                          key={userRole.role.id} 
+                          key={userRole.id} 
                           className="flex items-center justify-between p-3 bg-base-100 rounded-lg"
                         >
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
                               <span className="font-medium text-base-content">
-                                {userRole.role.name}
+                                {userRole.role_name}
                               </span>
-                              {userRole.role.is_system && (
-                                <Badge variant="warning" size="xs">System</Badge>
-                              )}
                             </div>
-                            {userRole.role.description && (
-                              <p className="text-sm text-base-content/70 mt-1">
-                                {userRole.role.description}
-                              </p>
-                            )}
                             <div className="flex items-center space-x-2 mt-2">
-                              <Badge variant="info" size="xs">
-                                {userRole.role.permissions?.length || 0} permissions
-                              </Badge>
-                              {userRole.created_at && (
+                              {userRole.granted_at && (
                                 <span className="text-xs text-base-content/50">
-                                  Granted {new Date(userRole.created_at).toLocaleDateString()}
+                                  Granted {new Date(userRole.granted_at).toLocaleDateString()}
                                 </span>
                               )}
                             </div>
@@ -315,9 +312,9 @@ export const UserRolesModal: React.FC<UserRolesModalProps> = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleRemoveRole(userRole.role.id)}
-                            disabled={loading || userRole.role.is_system}
-                            title={userRole.role.is_system ? 'Cannot remove system role' : 'Remove role'}
+                            onClick={() => handleRemoveRole(userRole.role_id)}
+                            disabled={loading}
+                            title="Remove role"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

@@ -33,6 +33,7 @@ const RolesPage: React.FC = () => {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [localPermissionIds, setLocalPermissionIds] = useState<string[]>([]);
 
   const {
     roles,
@@ -78,6 +79,8 @@ const RolesPage: React.FC = () => {
   // Handle manage permissions
   const handleManagePermissions = (role: Role) => {
     setSelectedRole(role);
+    // Initialize local state with current role permissions
+    setLocalPermissionIds(role.permissions?.map(p => p.id) || []);
     setShowPermissionsModal(true);
   };
 
@@ -86,9 +89,37 @@ const RolesPage: React.FC = () => {
     setFormLoading(true);
     try {
       if (selectedRole) {
-        await updateRole(selectedRole.id, data as UpdateRoleRequest);
+        // UPDATING EXISTING ROLE
+        // Extract permission_ids from the update data
+        const { permission_ids, ...roleUpdateData } = data as UpdateRoleRequest & { permission_ids?: string[] };
+        
+        // Update the role metadata (name, description)
+        await updateRole(selectedRole.id, roleUpdateData);
+        
+        // If permissions have changed, update them too
+        if (permission_ids !== undefined) {
+          const originalPermissionIds = selectedRole.permissions?.map(p => p.id) || [];
+          const hasPermissionChanges = 
+            permission_ids.length !== originalPermissionIds.length ||
+            !permission_ids.every(id => originalPermissionIds.includes(id)) ||
+            !originalPermissionIds.every(id => permission_ids.includes(id));
+          
+          if (hasPermissionChanges) {
+            await assignPermissions(selectedRole.id, permission_ids);
+          }
+        }
       } else {
-        await createRole(data as CreateRoleRequest);
+        // CREATING NEW ROLE
+        // Extract permission_ids from the create data
+        const { permission_ids, ...roleCreateData } = data as CreateRoleRequest & { permission_ids?: string[] };
+        
+        // Create the role first
+        const newRole = await createRole(roleCreateData);
+        
+        // If permissions were provided, assign them to the new role
+        if (permission_ids && permission_ids.length > 0 && newRole?.id) {
+          await assignPermissions(newRole.id, permission_ids);
+        }
       }
       setShowRoleForm(false);
       setSelectedRole(null);
@@ -112,20 +143,33 @@ const RolesPage: React.FC = () => {
     }
   };
 
-  // Handle permissions update
-  const handlePermissionsUpdate = async (permissionIds: string[]) => {
+  // Handle local permissions change (no API call)
+  const handleLocalPermissionsChange = (permissionIds: string[]) => {
+    setLocalPermissionIds(permissionIds);
+  };
+
+  // Handle permissions save (API call)
+  const handlePermissionsSave = async () => {
     if (!selectedRole) return;
 
     try {
       setFormLoading(true);
-      await assignPermissions(selectedRole.id, permissionIds);
+      await assignPermissions(selectedRole.id, localPermissionIds);
       setShowPermissionsModal(false);
       setSelectedRole(null);
+      setLocalPermissionIds([]);
     } catch (error) {
       // Error handled by useRoles hook
     } finally {
       setFormLoading(false);
     }
+  };
+
+  // Handle permissions cancel
+  const handlePermissionsCancel = () => {
+    setShowPermissionsModal(false);
+    setSelectedRole(null);
+    setLocalPermissionIds([]);
   };
 
   // Table columns
@@ -359,15 +403,16 @@ const RolesPage: React.FC = () => {
       {/* Permissions Management Modal */}
       <Modal
         isOpen={showPermissionsModal}
-        onClose={() => setShowPermissionsModal(false)}
+        onClose={handlePermissionsCancel}
         title={`Manage Permissions - ${selectedRole?.name}`}
         size="lg"
       >
         <ModalBody>
           {selectedRole && (
             <PermissionSelector
-              selectedPermissionIds={selectedRole.permissions?.map(p => p.id) || []}
-              onPermissionsChange={handlePermissionsUpdate}
+              selectedPermissionIds={localPermissionIds}
+              onPermissionsChange={handleLocalPermissionsChange}
+              originalPermissionIds={selectedRole.permissions?.map(p => p.id) || []}
               disabled={formLoading}
             />
           )}
@@ -375,10 +420,18 @@ const RolesPage: React.FC = () => {
         <ModalFooter>
           <Button
             variant="ghost"
-            onClick={() => setShowPermissionsModal(false)}
+            onClick={handlePermissionsCancel}
             disabled={formLoading}
           >
             Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handlePermissionsSave}
+            disabled={formLoading}
+            loading={formLoading}
+          >
+            Save Changes
           </Button>
         </ModalFooter>
       </Modal>

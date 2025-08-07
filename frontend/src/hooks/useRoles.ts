@@ -226,6 +226,7 @@ export const useRoles = (options: UseRolesOptions = {}): UseRolesReturn => {
   // Assign permissions to role
   const assignPermissions = useCallback(async (roleId: string, permissionIds: string[]): Promise<Role> => {
     try {
+      console.log('🔧 useRoles - Assigning permissions to role:', roleId, 'with IDs:', permissionIds);
       const response = await rolesApi.assignPermissions(roleId, permissionIds);
       
       if (response.success && response.data) {
@@ -235,10 +236,13 @@ export const useRoles = (options: UseRolesOptions = {}): UseRolesReturn => {
           message: 'Role permissions have been updated successfully.',
         });
         
-        // Update role in local state
+        // Update role in local state with the response that includes permissions
         setRoles(prev => prev.map(role => 
           role.id === roleId ? response.data! : role
         ));
+        
+        // Also refetch to ensure consistency
+        await fetchRoles();
         
         return response.data;
       } else {
@@ -246,6 +250,7 @@ export const useRoles = (options: UseRolesOptions = {}): UseRolesReturn => {
       }
     } catch (err) {
       const errorMessage = errorUtils.getErrorMessage(err);
+      console.error('❌ useRoles - Error assigning permissions:', err);
       addNotification({
         type: 'error',
         title: 'Error Updating Permissions',
@@ -253,7 +258,7 @@ export const useRoles = (options: UseRolesOptions = {}): UseRolesReturn => {
       });
       throw err;
     }
-  }, [addNotification]);
+  }, [addNotification, fetchRoles]);
 
   return {
     roles,

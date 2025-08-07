@@ -13,6 +13,7 @@ interface UseUsersOptions {
 
 interface UseUsersReturn {
   users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   loading: boolean;
   error: string | null;
   pagination: {
@@ -286,6 +287,7 @@ export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
 
   return {
     users,
+    setUsers,
     loading,
     error,
     pagination,
