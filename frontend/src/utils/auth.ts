@@ -105,23 +105,25 @@ export const userManager = {
 export const permissionUtils = {
   // Check if user has specific permission
   hasPermission: (user: User, resource: string, action: string): boolean => {
-    const permissionString = `${resource}:${action}`;
+    // Convert resource to application-scoped format if needed
+    const scopedResource = resource.startsWith('authy_') ? resource : `authy_${resource}`;
+    const scopedPermissionString = `${scopedResource}:${action}`;
+    const originalPermissionString = `${resource}:${action}`;
     
     // Check if user has permissions array from login response
     if ((user as any).permissions && Array.isArray((user as any).permissions)) {
-      return (user as any).permissions.includes(permissionString);
+      return (user as any).permissions.includes(scopedPermissionString) ||
+             (user as any).permissions.includes(originalPermissionString);
     }
     
     // Fallback to checking roles structure
+    // Note: The current UserRole interface doesn't contain permissions
+    // This would need to be implemented when role permissions are loaded
     if (!user.roles || user.roles.length === 0) return false;
     
-    return user.roles.some(userRole => {
-      if (!userRole.role.permissions) return false;
-      
-      return userRole.role.permissions.some(permission => 
-        permission.resource === resource && permission.action === action
-      );
-    });
+    // For now, return false as the roles don't contain permission data
+    // This should be updated when the API returns roles with permissions
+    return false;
   },
 
   // Check if user has any of the specified permissions
@@ -149,33 +151,19 @@ export const permissionUtils = {
     }
     
     // Fallback to checking roles structure
+    // Note: The current UserRole interface doesn't contain permissions
+    // This would need to be implemented when role permissions are loaded
     if (!user.roles || user.roles.length === 0) return [];
     
-    const permissions: Array<{ resource: string; action: string }> = [];
-    
-    user.roles.forEach(userRole => {
-      if (userRole.role.permissions) {
-        userRole.role.permissions.forEach(permission => {
-          const exists = permissions.find(p => 
-            p.resource === permission.resource && p.action === permission.action
-          );
-          
-          if (!exists) {
-            permissions.push({
-              resource: permission.resource,
-              action: permission.action,
-            });
-          }
-        });
-      }
-    });
-    
-    return permissions;
+    // For now, return empty array as the roles don't contain permission data
+    // This should be updated when the API returns roles with permissions
+    return [];
   },
 
   // Check if user is system admin
   isSystemAdmin: (user: User): boolean => {
-    return user.is_system || permissionUtils.hasPermission(user, 'system', 'admin');
+    return user.is_system || permissionUtils.hasPermission(user, 'system', 'admin') || 
+           permissionUtils.hasPermission(user, 'authy_system', 'admin');
   },
 };
 

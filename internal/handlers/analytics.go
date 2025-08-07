@@ -628,13 +628,13 @@ func (h *AnalyticsHandler) getFailedLoginIPs(startTime, endTime time.Time) []Fai
 
 func (h *AnalyticsHandler) getPermissionUsage(startTime, endTime time.Time) []PermissionUsage {
 	// This would require tracking permission usage in audit logs
-	// For now, return mock data
+	// For now, return mock data with application-scoped permissions
 	return []PermissionUsage{
-		{Permission: "users:read", UsageCount: 450},
-		{Permission: "users:update", UsageCount: 230},
-		{Permission: "applications:read", UsageCount: 180},
-		{Permission: "system:audit", UsageCount: 95},
-		{Permission: "roles:list", UsageCount: 78},
+		{Permission: "authy_users:read", UsageCount: 450},
+		{Permission: "authy_users:update", UsageCount: 230},
+		{Permission: "authy_applications:read", UsageCount: 180},
+		{Permission: "authy_system:audit", UsageCount: 95},
+		{Permission: "authy_roles:list", UsageCount: 78},
 	}
 }
 

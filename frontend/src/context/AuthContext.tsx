@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
 import type { AuthState, AuthContextType, User } from '../types';
 import { authApi } from '../services/api';
-import { tokenManager, userManager, errorUtils } from '../utils';
+import { tokenManager, userManager, errorUtils, permissionUtils } from '../utils';
 
 // Auth actions
 type AuthAction =
@@ -379,11 +379,8 @@ export const withAuth = <P extends object>(
     // Check permissions if required
     if (options?.requiredPermission && state.user) {
       const { resource, action } = options.requiredPermission;
-      const hasPermission = state.user.roles?.some(userRole =>
-        userRole.role.permissions?.some(permission =>
-          permission.resource === resource && permission.action === action
-        )
-      );
+      // Use the permission utility function for consistent permission checking
+      const hasPermission = permissionUtils.hasPermission(state.user, resource, action);
 
       if (!hasPermission) {
         return (

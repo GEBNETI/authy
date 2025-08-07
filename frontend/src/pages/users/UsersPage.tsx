@@ -36,7 +36,6 @@ const UsersPage: React.FC = () => {
 
   const {
     users,
-    setUsers,
     loading,
     pagination,
     setSearch,
@@ -362,7 +361,7 @@ const UsersPage: React.FC = () => {
           setUserForRoles(null);
         }}
         user={userForRoles}
-        onRolesUpdated={async (userSignal) => {
+        onRolesUpdated={async () => {
           // Refetch all users to get updated roles across all applications
           await refetch();
         }}

@@ -20,7 +20,7 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
   const [selectedResource, setSelectedResource] = useState<string>('all');
 
   // Use the dedicated hook to get ALL permissions without pagination
-  const { permissions, loading, error } = useAllPermissions();
+  const { permissions, loading } = useAllPermissions();
 
   // Filter permissions based on search and resource
   const filteredPermissions = permissions.filter(permission => {

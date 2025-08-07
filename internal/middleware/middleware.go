@@ -188,9 +188,19 @@ func RequirePermission(resource, action string) fiber.Handler {
 			})
 		}
 		
-		// Check for wildcard permission
+		// Convert resource to application-scoped format if needed
+		scopedResource := resource
+		if !strings.HasPrefix(resource, "authy_") {
+			scopedResource = "authy_" + resource
+		}
+		
+		// Check for wildcard permission or exact match
+		requiredPermission := scopedResource + ":" + action
 		for _, perm := range permissions {
-			if perm == "*" || perm == resource+":*" || perm == resource+":"+action {
+			if perm == "*" || 
+			   perm == "authy_system:admin" || // Super admin permission
+			   perm == scopedResource+":*" || 
+			   perm == requiredPermission {
 				return c.Next()
 			}
 		}

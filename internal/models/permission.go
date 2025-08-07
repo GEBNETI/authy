@@ -70,8 +70,14 @@ func (p *Permission) validate() error {
 		return fmt.Errorf("invalid action format: %s", p.Action)
 	}
 
-	// Generate name from resource and action
-	p.Name = fmt.Sprintf("%s:%s", strings.ToLower(p.Resource), strings.ToLower(p.Action))
+	// Generate name from resource and action (application-scoped)
+	// If resource doesn't start with application prefix, add it
+	resource := strings.ToLower(p.Resource)
+	if !strings.HasPrefix(resource, "authy_") {
+		resource = "authy_" + resource
+	}
+	p.Name = fmt.Sprintf("%s:%s", resource, strings.ToLower(p.Action))
+	p.Resource = resource
 
 	// Set default category if empty
 	if p.Category == "" {
@@ -180,42 +186,45 @@ func ParsePermission(permission string) (resource, action string, err error) {
 	return strings.ToLower(parts[0]), strings.ToLower(parts[1]), nil
 }
 
-// SystemPermissions defines the default system permissions
+// SystemPermissions defines the default system permissions (application-scoped)
 var SystemPermissions = []Permission{
-	// User Management
-	{Resource: "users", Action: "create", Description: "Create new users", Category: "user_management", IsSystem: true},
-	{Resource: "users", Action: "read", Description: "View user information", Category: "user_management", IsSystem: true},
-	{Resource: "users", Action: "update", Description: "Update user information", Category: "user_management", IsSystem: true},
-	{Resource: "users", Action: "delete", Description: "Delete/deactivate users", Category: "user_management", IsSystem: true},
-	{Resource: "users", Action: "list", Description: "List all users", Category: "user_management", IsSystem: true},
+	// User Management (authy_ prefixed)
+	{Resource: "authy_users", Action: "create", Description: "Create new users in Authy", Category: "user_management", IsSystem: true},
+	{Resource: "authy_users", Action: "read", Description: "View user information in Authy", Category: "user_management", IsSystem: true},
+	{Resource: "authy_users", Action: "update", Description: "Update user information in Authy", Category: "user_management", IsSystem: true},
+	{Resource: "authy_users", Action: "delete", Description: "Delete/deactivate users in Authy", Category: "user_management", IsSystem: true},
+	{Resource: "authy_users", Action: "list", Description: "List all users in Authy", Category: "user_management", IsSystem: true},
 	
-	// Role Management
-	{Resource: "roles", Action: "create", Description: "Create new roles", Category: "role_management", IsSystem: true},
-	{Resource: "roles", Action: "read", Description: "View role information", Category: "role_management", IsSystem: true},
-	{Resource: "roles", Action: "update", Description: "Update role information", Category: "role_management", IsSystem: true},
-	{Resource: "roles", Action: "delete", Description: "Delete roles", Category: "role_management", IsSystem: true},
-	{Resource: "roles", Action: "list", Description: "List all roles", Category: "role_management", IsSystem: true},
-	{Resource: "roles", Action: "assign", Description: "Assign roles to users", Category: "role_management", IsSystem: true},
-	{Resource: "roles", Action: "revoke", Description: "Revoke roles from users", Category: "role_management", IsSystem: true},
+	// Role Management (authy_ prefixed)
+	{Resource: "authy_roles", Action: "create", Description: "Create new roles in Authy", Category: "role_management", IsSystem: true},
+	{Resource: "authy_roles", Action: "read", Description: "View role information in Authy", Category: "role_management", IsSystem: true},
+	{Resource: "authy_roles", Action: "update", Description: "Update role information in Authy", Category: "role_management", IsSystem: true},
+	{Resource: "authy_roles", Action: "delete", Description: "Delete roles in Authy", Category: "role_management", IsSystem: true},
+	{Resource: "authy_roles", Action: "list", Description: "List all roles in Authy", Category: "role_management", IsSystem: true},
+	{Resource: "authy_roles", Action: "assign", Description: "Assign roles to users in Authy", Category: "role_management", IsSystem: true},
+	{Resource: "authy_roles", Action: "revoke", Description: "Revoke roles from users in Authy", Category: "role_management", IsSystem: true},
 	
-	// Permission Management
-	{Resource: "permissions", Action: "create", Description: "Create new permissions", Category: "permission_management", IsSystem: true},
-	{Resource: "permissions", Action: "read", Description: "View permission information", Category: "permission_management", IsSystem: true},
-	{Resource: "permissions", Action: "update", Description: "Update permission information", Category: "permission_management", IsSystem: true},
-	{Resource: "permissions", Action: "delete", Description: "Delete permissions", Category: "permission_management", IsSystem: true},
-	{Resource: "permissions", Action: "list", Description: "List all permissions", Category: "permission_management", IsSystem: true},
-	{Resource: "permissions", Action: "assign", Description: "Assign permissions to roles", Category: "permission_management", IsSystem: true},
-	{Resource: "permissions", Action: "revoke", Description: "Revoke permissions from roles", Category: "permission_management", IsSystem: true},
+	// Permission Management (authy_ prefixed)
+	{Resource: "authy_permissions", Action: "create", Description: "Create new permissions in Authy", Category: "permission_management", IsSystem: true},
+	{Resource: "authy_permissions", Action: "read", Description: "View permission information in Authy", Category: "permission_management", IsSystem: true},
+	{Resource: "authy_permissions", Action: "update", Description: "Update permission information in Authy", Category: "permission_management", IsSystem: true},
+	{Resource: "authy_permissions", Action: "delete", Description: "Delete permissions in Authy", Category: "permission_management", IsSystem: true},
+	{Resource: "authy_permissions", Action: "list", Description: "List all permissions in Authy", Category: "permission_management", IsSystem: true},
+	{Resource: "authy_permissions", Action: "assign", Description: "Assign permissions to roles in Authy", Category: "permission_management", IsSystem: true},
+	{Resource: "authy_permissions", Action: "revoke", Description: "Revoke permissions from roles in Authy", Category: "permission_management", IsSystem: true},
 	
-	// Application Management
-	{Resource: "applications", Action: "create", Description: "Create new applications", Category: "application_management", IsSystem: true},
-	{Resource: "applications", Action: "read", Description: "View application information", Category: "application_management", IsSystem: true},
-	{Resource: "applications", Action: "update", Description: "Update application information", Category: "application_management", IsSystem: true},
-	{Resource: "applications", Action: "delete", Description: "Delete applications", Category: "application_management", IsSystem: true},
-	{Resource: "applications", Action: "list", Description: "List all applications", Category: "application_management", IsSystem: true},
+	// Application Management (authy_ prefixed)
+	{Resource: "authy_applications", Action: "create", Description: "Create new applications in Authy", Category: "application_management", IsSystem: true},
+	{Resource: "authy_applications", Action: "read", Description: "View application information in Authy", Category: "application_management", IsSystem: true},
+	{Resource: "authy_applications", Action: "update", Description: "Update application information in Authy", Category: "application_management", IsSystem: true},
+	{Resource: "authy_applications", Action: "delete", Description: "Delete applications in Authy", Category: "application_management", IsSystem: true},
+	{Resource: "authy_applications", Action: "list", Description: "List all applications in Authy", Category: "application_management", IsSystem: true},
 	
-	// System Administration
-	{Resource: "system", Action: "admin", Description: "Full system administration access", Category: "system", IsSystem: true},
-	{Resource: "system", Action: "audit", Description: "View audit logs and system monitoring", Category: "system", IsSystem: true},
-	{Resource: "system", Action: "config", Description: "Modify system configuration", Category: "system", IsSystem: true},
+	// System Administration (authy_ prefixed)
+	{Resource: "authy_system", Action: "admin", Description: "Full system administration access in Authy", Category: "system", IsSystem: true},
+	{Resource: "authy_system", Action: "audit", Description: "View audit logs and system monitoring in Authy", Category: "system", IsSystem: true},
+	{Resource: "authy_system", Action: "config", Description: "Modify system configuration in Authy", Category: "system", IsSystem: true},
+	
+	// Analytics permissions
+	{Resource: "authy_analytics", Action: "read", Description: "View analytics and reports in Authy", Category: "system", IsSystem: true},
 }
