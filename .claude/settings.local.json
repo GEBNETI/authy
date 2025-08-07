@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(podman logs:*)",
@@ -55,7 +56,12 @@
       "Bash(node server.js)",
       "Bash(rm:*)",
       "Bash(./start-dev.sh:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(PGPASSWORD=authy_password psql:*)",
+      "Bash(git add:*)",
+      "Bash(grep:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
