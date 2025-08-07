@@ -82,12 +82,13 @@ export interface UpdateUserRequest {
 
 export interface UserRole {
   id: string;
-  user_id: string;
   role_id: string;
+  role_name: string;
   application_id: string;
-  created_at: string;
-  role: Role;
-  application: Application;
+  application: string;
+  granted_at: string;
+  granted_by?: string;
+  granted_by_user?: User;
 }
 
 // Role types

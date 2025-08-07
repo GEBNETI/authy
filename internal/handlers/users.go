@@ -67,10 +67,10 @@ type AssignRoleRequest struct {
 
 // UsersListResponse represents the paginated users list response
 type UsersListResponse struct {
-	Success    bool           `json:"success"`
-	Message    string         `json:"message"`
-	Users      []UserResponse `json:"users"`
-	Pagination PaginationMeta `json:"pagination"`
+	Success    bool                    `json:"success"`
+	Message    string                  `json:"message"`
+	Users      []UserWithRolesResponse `json:"users"`
+	Pagination PaginationMeta          `json:"pagination"`
 }
 
 // GetUsers handles listing users with pagination and filtering
@@ -138,9 +138,9 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get users
+	// Get users with their roles
 	var users []models.User
-	if err := query.Order("created_at DESC").Limit(perPage).Offset(offset).Find(&users).Error; err != nil {
+	if err := query.Preload("UserRoles").Preload("UserRoles.Role").Preload("UserRoles.Application").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&users).Error; err != nil {
 		h.logger.Error("Failed to retrieve users", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
 			Error:   true,
@@ -148,18 +148,59 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 		})
 	}
 
-	// Convert to response format
-	var userResponses []UserResponse
+	// Convert to response format with roles
+	var userResponses []UserWithRolesResponse
 	for _, user := range users {
-		userResponses = append(userResponses, UserResponse{
-			ID:        user.ID,
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			FullName:  user.GetFullName(),
-			IsActive:  user.IsActive,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
+		// Convert user roles to response format
+		var userRoleResponses []UserRoleResponse
+		for _, userRole := range user.UserRoles {
+			roleResponse := UserRoleResponse{
+				ID:            userRole.ID,
+				RoleID:        userRole.RoleID,
+				ApplicationID: userRole.ApplicationID,
+				GrantedAt:     userRole.GrantedAt,
+				GrantedBy:     userRole.GrantedBy,
+			}
+			
+			// Include role name if available
+			if userRole.Role != nil {
+				roleResponse.RoleName = userRole.Role.Name
+			}
+			
+			// Include application name if available
+			if userRole.Application != nil {
+				roleResponse.Application = userRole.Application.Name
+			}
+			
+			// Include granted by user info if available
+			if userRole.GrantedByUser != nil {
+				roleResponse.GrantedByUser = &UserResponse{
+					ID:        userRole.GrantedByUser.ID,
+					Email:     userRole.GrantedByUser.Email,
+					FirstName: userRole.GrantedByUser.FirstName,
+					LastName:  userRole.GrantedByUser.LastName,
+					FullName:  userRole.GrantedByUser.GetFullName(),
+					IsActive:  userRole.GrantedByUser.IsActive,
+					CreatedAt: userRole.GrantedByUser.CreatedAt,
+					UpdatedAt: userRole.GrantedByUser.UpdatedAt,
+				}
+			}
+			
+			userRoleResponses = append(userRoleResponses, roleResponse)
+		}
+		
+		userResponses = append(userResponses, UserWithRolesResponse{
+			UserResponse: UserResponse{
+				ID:        user.ID,
+				Email:     user.Email,
+				FirstName: user.FirstName,
+				LastName:  user.LastName,
+				FullName:  user.GetFullName(),
+				IsActive:  user.IsActive,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+			},
+			Roles: userRoleResponses,
 		})
 	}
 

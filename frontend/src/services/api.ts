@@ -761,7 +761,7 @@ export const rolesApi = {
   assignPermissions: async (roleId: string, permissionIds: string[]): Promise<APIResponse<Role>> => {
     console.log('🔗 ROLES API - assignPermissions called with roleId:', roleId, 'permissionIds:', permissionIds);
     try {
-      const response: AxiosResponse<Role> = await apiClient.put(`/roles/${roleId}`, { permission_ids: permissionIds });
+      const response: AxiosResponse<Role> = await apiClient.post(`/roles/${roleId}/permissions`, { permission_ids: permissionIds });
       console.log('🔗 ROLES API - assignPermissions raw response:', JSON.stringify(response.data, null, 2));
       
       const result: APIResponse<Role> = {

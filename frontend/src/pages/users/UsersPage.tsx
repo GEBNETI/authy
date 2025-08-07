@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -36,6 +36,7 @@ const UsersPage: React.FC = () => {
 
   const {
     users,
+    setUsers,
     loading,
     pagination,
     setSearch,
@@ -50,6 +51,16 @@ const UsersPage: React.FC = () => {
     () => utils.debounce((value: string) => setSearch(value), 300),
     [setSearch]
   );
+
+  // Update modal user when users list changes (after refetch)
+  useEffect(() => {
+    if (userForRoles && users.length > 0) {
+      const updatedUser = users.find(u => u.id === userForRoles.id);
+      if (updatedUser) {
+        setUserForRoles(updatedUser);
+      }
+    }
+  }, [users, userForRoles]);
 
   // Handle search input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,7 +186,7 @@ const UsersPage: React.FC = () => {
                 size="xs"
                 outline
               >
-                {userRole.role.name}
+                {userRole.role_name}
               </Badge>
             ))
           ) : (
@@ -351,7 +362,10 @@ const UsersPage: React.FC = () => {
           setUserForRoles(null);
         }}
         user={userForRoles}
-        onRolesUpdated={refetch}
+        onRolesUpdated={async (userSignal) => {
+          // Refetch all users to get updated roles across all applications
+          await refetch();
+        }}
       />
 
       {/* User Status Change Confirmation Modal */}

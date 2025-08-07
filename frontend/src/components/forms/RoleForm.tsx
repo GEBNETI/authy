@@ -31,9 +31,6 @@ const updateRoleSchema = z.object({
     .string()
     .min(1, 'Description is required')
     .max(500, 'Description must be less than 500 characters'),
-  application_id: z
-    .string()
-    .min(1, 'Application is required'),
   permission_ids: z.array(z.string()).optional(),
 });
 
@@ -82,7 +79,6 @@ export const RoleForm: React.FC<RoleFormProps> = ({
     initialValues: {
       name: role?.name || '',
       description: role?.description || '',
-      application_id: role?.application_id || '',
       permission_ids: role?.permissions?.map(p => p.id) || [],
     },
     validationSchema: updateRoleSchema,
@@ -98,9 +94,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({
   React.useEffect(() => {
     if (isOpen && isEditing && role) {
       console.log('🔧 RoleForm - Editing role:', role);
-      console.log('🔧 RoleForm - Role permissions:', role.permissions);
       const permissionIds = role.permissions?.map(p => p.id) || [];
-      console.log('🔧 RoleForm - Setting permission_ids:', permissionIds);
       
       updateForm.setValue('name', role.name);
       updateForm.setValue('description', role.description);
@@ -198,6 +192,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({
             <PermissionSelector
               selectedPermissionIds={currentForm.values.permission_ids || []}
               onPermissionsChange={handlePermissionsChange}
+              originalPermissionIds={isEditing && role ? (role.permissions?.map(p => p.id) || []) : []}
               disabled={loading}
             />
           </div>
@@ -219,7 +214,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({
 
           {/* Info for editing */}
           {isEditing && role && (
-            <div className="bg-base-200 p-3 rounded-lg mt-6">
+            <div className="bg-base-200 p-3 rounded-lg">
               <p className="text-sm text-base-content/70">
                 <strong>ID:</strong> {role.id}
               </p>
