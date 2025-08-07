@@ -1069,10 +1069,10 @@ export const analyticsApi = {
             { ip_address: '172.16.0.25', attempts: 8, last_attempt: new Date().toISOString() },
           ],
           permission_usage: [
-            { permission: 'users:create', usage_count: 234 },
-            { permission: 'users:read', usage_count: 1523 },
-            { permission: 'users:update', usage_count: 456 },
-            { permission: 'applications:read', usage_count: 789 },
+            { permission: 'authy_users:create', usage_count: 234 },
+            { permission: 'authy_users:read', usage_count: 1523 },
+            { permission: 'authy_users:update', usage_count: 456 },
+            { permission: 'authy_applications:read', usage_count: 789 },
           ],
           security_events_trend: Array.from({ length: 7 }, (_, i) => ({
             date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

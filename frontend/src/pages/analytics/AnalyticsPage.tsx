@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { TrendingUp, Users, Shield, Activity, Clock, AlertTriangle, BarChart3, Calendar } from 'lucide-react';
-import { Card, CardBody, CardTitle, Input } from '../../components/ui';
+import { TrendingUp, Users, Shield, Activity, AlertTriangle } from 'lucide-react';
+import { Card, CardBody } from '../../components/ui';
 import { LineChart, BarChart, DonutChart, HeatmapChart } from '../../components/charts';
 import { useAnalytics } from '../../hooks';
-import { formatUtils } from '../../utils';
 import type { AnalyticsTimeRange } from '../../types';
 
 const AnalyticsPage: React.FC = () => {
@@ -182,7 +181,7 @@ const AnalyticsPage: React.FC = () => {
             <Card shadow="md">
               <CardBody>
                 <HeatmapChart
-                  data={authentication.peak_hours.map((hour, index) => ({
+                  data={authentication.peak_hours.map((hour) => ({
                     x: hour.hour % 6,
                     y: Math.floor(hour.hour / 6),
                     value: hour.count,
@@ -293,7 +292,7 @@ const AnalyticsPage: React.FC = () => {
           <Card shadow="md">
             <CardBody>
               <LineChart
-                data={(users.new_users_trend || []).map(trend => ({
+                data={(users?.new_users_trend || []).map(trend => ({
                   label: new Date(trend.date).toLocaleDateString('en-US', { 
                     month: 'short', 
                     day: 'numeric' 

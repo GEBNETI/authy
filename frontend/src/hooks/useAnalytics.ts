@@ -39,19 +39,19 @@ export const useAnalytics = (timeRange: AnalyticsTimeRange): UseAnalyticsReturn 
         analyticsApi.getSecurityAnalytics(timeRange),
       ]);
 
-      if (authResponse.success) {
+      if (authResponse.success && authResponse.data) {
         setAuthentication(authResponse.data);
       }
 
-      if (usersResponse.success) {
+      if (usersResponse.success && usersResponse.data) {
         setUsers(usersResponse.data);
       }
 
-      if (appsResponse.success) {
+      if (appsResponse.success && appsResponse.data) {
         setApplications(appsResponse.data);
       }
 
-      if (securityResponse.success) {
+      if (securityResponse.success && securityResponse.data) {
         setSecurity(securityResponse.data);
       }
 

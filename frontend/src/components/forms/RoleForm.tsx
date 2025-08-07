@@ -31,6 +31,9 @@ const updateRoleSchema = z.object({
     .string()
     .min(1, 'Description is required')
     .max(500, 'Description must be less than 500 characters'),
+  application_id: z
+    .string()
+    .min(1, 'Application is required'),
   permission_ids: z.array(z.string()).optional(),
 });
 
@@ -79,6 +82,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({
     initialValues: {
       name: role?.name || '',
       description: role?.description || '',
+      application_id: role?.application_id || '',
       permission_ids: role?.permissions?.map(p => p.id) || [],
     },
     validationSchema: updateRoleSchema,
