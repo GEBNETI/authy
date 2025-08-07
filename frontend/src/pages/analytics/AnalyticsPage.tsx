@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingUp, Users, Shield, Activity, Clock, AlertTriangle, BarChart3, Calendar } from 'lucide-react';
 import { Card, CardBody, CardTitle, Input } from '../../components/ui';
+import { LineChart, BarChart, DonutChart, HeatmapChart } from '../../components/charts';
 import { useAnalytics } from '../../hooks';
 import { formatUtils } from '../../utils';
 import type { AnalyticsTimeRange } from '../../types';
@@ -139,14 +140,23 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Login Trends Chart (placeholder) */}
+          {/* Login Trends Chart */}
           <Card shadow="md">
             <CardBody>
-              <CardTitle>Login Trends</CardTitle>
-              <div className="mt-4 h-64 flex items-center justify-center bg-base-200 rounded-lg">
-                <BarChart3 className="w-12 h-12 text-base-content/30" />
-                <p className="ml-4 text-base-content/50">Chart visualization would go here</p>
-              </div>
+              <LineChart
+                data={authentication.login_trends.map(trend => ({
+                  label: new Date(trend.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  }),
+                  value: trend.successful + trend.failed,
+                  date: trend.date,
+                }))}
+                title="Login Trends"
+                height={250}
+                color="primary"
+                formatValue={(value) => `${value} logins`}
+              />
             </CardBody>
           </Card>
 
@@ -154,41 +164,38 @@ const AnalyticsPage: React.FC = () => {
             {/* Failure Reasons */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Top Failure Reasons</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {authentication.failure_reasons.slice(0, 5).map((reason, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-base-content/70">{reason.reason}</span>
-                      <span className="text-sm font-medium">{reason.count}</span>
-                    </div>
-                  ))}
-                </div>
+                <BarChart
+                  data={authentication.failure_reasons.slice(0, 5).map(reason => ({
+                    label: reason.reason,
+                    value: reason.count,
+                    color: 'error',
+                  }))}
+                  title="Top Failure Reasons"
+                  height={200}
+                  horizontal={true}
+                  formatValue={(value) => `${value} attempts`}
+                />
               </CardBody>
             </Card>
 
             {/* Peak Hours */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Peak Activity Hours</CardTitle>
-                <div className="mt-4 space-y-2">
-                  {authentication.peak_hours.slice(0, 5).map((hour, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <Clock className="w-4 h-4 text-base-content/50" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">{hour.hour}:00</span>
-                          <span className="text-sm font-medium">{hour.count} logins</span>
-                        </div>
-                        <div className="mt-1 w-full bg-base-200 rounded-full h-2">
-                          <div 
-                            className="bg-primary h-2 rounded-full"
-                            style={{ width: `${(hour.count / Math.max(...authentication.peak_hours.map(h => h.count))) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <HeatmapChart
+                  data={authentication.peak_hours.map((hour, index) => ({
+                    x: hour.hour % 6,
+                    y: Math.floor(hour.hour / 6),
+                    value: hour.count,
+                    label: `${hour.hour}:00 - ${hour.count} logins`,
+                  }))}
+                  title="Activity Heatmap (24 Hours)"
+                  width={300}
+                  height={120}
+                  xLabels={['00', '06', '12', '18', '24']}
+                  yLabels={['Morning', 'Afternoon', 'Evening', 'Night']}
+                  colorScheme="primary"
+                  formatValue={(value) => `${value}`}
+                />
               </CardBody>
             </Card>
           </div>
@@ -244,33 +251,33 @@ const AnalyticsPage: React.FC = () => {
             {/* Role Distribution */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Role Distribution</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {users.role_distribution.map((role, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-base-content/70">{role.role}</span>
-                      <span className="text-sm font-medium">{role.count} users</span>
-                    </div>
-                  ))}
-                </div>
+                <DonutChart
+                  data={users.role_distribution.map((role, index) => ({
+                    label: role.role,
+                    value: role.count,
+                    color: ['primary', 'success', 'warning', 'info', 'neutral'][index % 5] as any,
+                  }))}
+                  title="Role Distribution"
+                  size={200}
+                  formatValue={(value) => `${value} users`}
+                />
               </CardBody>
             </Card>
 
             {/* Top Active Users */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Most Active Users</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {users.top_active_users.slice(0, 5).map((user, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-base-content/70">{user.email}</p>
-                      </div>
-                      <span className="text-sm font-medium">{user.action_count} actions</span>
-                    </div>
-                  ))}
-                </div>
+                <BarChart
+                  data={users.top_active_users.slice(0, 5).map(user => ({
+                    label: user.name.split(' ')[0], // First name only for space
+                    value: user.action_count,
+                    color: 'success',
+                  }))}
+                  title="Most Active Users"
+                  height={200}
+                  horizontal={true}
+                  formatValue={(value) => `${value} actions`}
+                />
               </CardBody>
             </Card>
           </div>
@@ -282,43 +289,58 @@ const AnalyticsPage: React.FC = () => {
         <div className="space-y-6">
           <h2 className="text-lg font-semibold text-base-content">Application Usage</h2>
           
+          {/* New Users Trend */}
+          <Card shadow="md">
+            <CardBody>
+              <LineChart
+                data={(users.new_users_trend || []).map(trend => ({
+                  label: new Date(trend.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  }),
+                  value: trend.count,
+                  date: trend.date,
+                }))}
+                title="New Users Registration Trend"
+                height={200}
+                color="success"
+                formatValue={(value) => `${value} users`}
+              />
+            </CardBody>
+          </Card>
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Application Usage */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Top Applications</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {applications.application_usage.slice(0, 5).map((app, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{app.name}</p>
-                        <p className="text-xs text-base-content/70">{app.user_count} users</p>
-                      </div>
-                      <span className="text-sm font-medium">{app.request_count.toLocaleString()} requests</span>
-                    </div>
-                  ))}
-                </div>
+                <BarChart
+                  data={applications.application_usage.slice(0, 5).map(app => ({
+                    label: app.name.length > 10 ? app.name.substring(0, 10) + '...' : app.name,
+                    value: app.request_count,
+                    color: 'primary',
+                  }))}
+                  title="Top Applications by Requests"
+                  height={200}
+                  horizontal={true}
+                  formatValue={(value) => `${value.toLocaleString()} requests`}
+                />
               </CardBody>
             </Card>
 
             {/* Error Rates */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Application Error Rates</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {applications.error_rates.filter(app => app.error_rate > 0).slice(0, 5).map((app, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-base-content/70">{app.application}</span>
-                      <span className={`text-sm font-medium ${
-                        app.error_rate > 5 ? 'text-error' : 
-                        app.error_rate > 2 ? 'text-warning' : 
-                        'text-success'
-                      }`}>
-                        {app.error_rate.toFixed(2)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <BarChart
+                  data={applications.error_rates.filter(app => app.error_rate > 0).slice(0, 5).map(app => ({
+                    label: app.application.length > 10 ? app.application.substring(0, 10) + '...' : app.application,
+                    value: app.error_rate,
+                    color: app.error_rate > 5 ? 'error' : app.error_rate > 2 ? 'warning' : 'success',
+                  }))}
+                  title="Application Error Rates"
+                  height={200}
+                  horizontal={true}
+                  formatValue={(value) => `${value.toFixed(2)}%`}
+                />
               </CardBody>
             </Card>
           </div>
@@ -370,39 +392,57 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </div>
 
+          {/* Security Events Trend */}
+          <Card shadow="md">
+            <CardBody>
+              <LineChart
+                data={security.security_events_trend.map(trend => ({
+                  label: new Date(trend.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  }),
+                  value: trend.events,
+                  date: trend.date,
+                }))}
+                title="Security Events Trend"
+                height={200}
+                color="warning"
+                formatValue={(value) => `${value} events`}
+              />
+            </CardBody>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Failed Login IPs */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Suspicious IP Addresses</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {security.failed_login_ips.slice(0, 5).map((ip, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-mono">{ip.ip_address}</p>
-                        <p className="text-xs text-base-content/70">
-                          Last attempt: {formatUtils.formatRelativeTime(ip.last_attempt)}
-                        </p>
-                      </div>
-                      <span className="text-sm font-medium text-error">{ip.attempts} attempts</span>
-                    </div>
-                  ))}
-                </div>
+                <BarChart
+                  data={security.failed_login_ips.slice(0, 5).map(ip => ({
+                    label: ip.ip_address.split('.').slice(-2).join('.'), // Show last 2 octets
+                    value: ip.attempts,
+                    color: 'error',
+                  }))}
+                  title="Suspicious IP Addresses"
+                  height={200}
+                  horizontal={true}
+                  formatValue={(value) => `${value} attempts`}
+                />
               </CardBody>
             </Card>
 
             {/* Permission Usage */}
             <Card shadow="md">
               <CardBody>
-                <CardTitle>Most Used Permissions</CardTitle>
-                <div className="mt-4 space-y-3">
-                  {security.permission_usage.slice(0, 5).map((perm, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm font-mono text-base-content/70">{perm.permission}</span>
-                      <span className="text-sm font-medium">{perm.usage_count} uses</span>
-                    </div>
-                  ))}
-                </div>
+                <DonutChart
+                  data={security.permission_usage.slice(0, 5).map((perm, index) => ({
+                    label: perm.permission.split(':')[0], // Show resource only
+                    value: perm.usage_count,
+                    color: ['primary', 'success', 'warning', 'info', 'neutral'][index % 5] as any,
+                  }))}
+                  title="Permission Usage Distribution"
+                  size={180}
+                  formatValue={(value) => `${value} uses`}
+                />
               </CardBody>
             </Card>
           </div>
