@@ -55,10 +55,7 @@ CREATE TABLE tokens (
     token_hash VARCHAR(255) NOT NULL,
     token_type VARCHAR(20) NOT NULL CHECK (token_type IN ('access', 'refresh')),
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    INDEX idx_tokens_hash (token_hash),
-    INDEX idx_tokens_user_app (user_id, application_id),
-    INDEX idx_tokens_expires (expires_at)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create audit_logs table
@@ -83,6 +80,9 @@ CREATE INDEX idx_applications_system ON applications(is_system);
 CREATE INDEX idx_roles_application ON roles(application_id);
 CREATE INDEX idx_user_roles_user ON user_roles(user_id);
 CREATE INDEX idx_user_roles_application ON user_roles(application_id);
+CREATE INDEX idx_tokens_hash ON tokens(token_hash);
+CREATE INDEX idx_tokens_user_app ON tokens(user_id, application_id);
+CREATE INDEX idx_tokens_expires ON tokens(expires_at);
 CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_application ON audit_logs(application_id);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);

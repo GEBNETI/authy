@@ -5,7 +5,7 @@
 -- application-scoped naming (authy_ prefix)
 -- ==========================================
 
-\echo 'Starting migration: Update permissions to application-scoped format...';
+-- Starting migration: Update permissions to application-scoped format...
 
 -- Add is_system column to users table if it doesn't exist
 DO $$
@@ -66,7 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions(role_id
 CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
 
 -- Update existing permissions to application-scoped format
-\echo 'Updating existing permissions to application-scoped format...';
+-- Updating existing permissions to application-scoped format...
 
 -- Update user management permissions
 UPDATE permissions SET 
@@ -104,7 +104,7 @@ UPDATE permissions SET
 WHERE resource = 'system' AND NOT resource LIKE 'authy_%';
 
 -- Insert new application-scoped permissions that might be missing
-\echo 'Inserting missing application-scoped permissions...';
+-- Inserting missing application-scoped permissions...
 
 INSERT INTO permissions (name, resource, action, description, category, is_system) VALUES
 -- User Management
@@ -149,12 +149,12 @@ INSERT INTO permissions (name, resource, action, description, category, is_syste
 
 ON CONFLICT (name) DO NOTHING; -- Don't overwrite existing permissions
 
--- Show updated permissions count
-\echo 'Migration completed. Current application-scoped permissions:';
-SELECT 
-    category,
-    COUNT(*) as permission_count
-FROM permissions 
-WHERE resource LIKE 'authy_%' AND is_system = true
-GROUP BY category
-ORDER BY category;
+-- Migration completed. Current application-scoped permissions:
+-- The following query shows the results:
+-- SELECT 
+--     category,
+--     COUNT(*) as permission_count
+-- FROM permissions 
+-- WHERE resource LIKE 'authy_%' AND is_system = true
+-- GROUP BY category
+-- ORDER BY category;
