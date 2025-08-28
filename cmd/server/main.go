@@ -91,6 +91,11 @@ func main() {
 	// Rate limiting for auth endpoints
 	authRateLimit := middleware.RateLimiter(cache, 10) // 10 requests per minute
 	
+	// Root endpoint
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Authy Authentication Service")
+	})
+	
 	// Health check endpoint
 	app.Get("/health", handlers.HealthCheck(cfg))
 	
