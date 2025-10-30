@@ -86,7 +86,7 @@ func SeedSystemPermissions(db *gorm.DB) error {
 	return nil
 }
 
-// SeedSystemApplication creates the default AuthyBackoffice system application
+// SeedSystemApplication creates the default Authy system application
 func SeedSystemApplication(db *gorm.DB) error {
 	// First seed system permissions
 	if err := SeedSystemPermissions(db); err != nil {
@@ -95,7 +95,7 @@ func SeedSystemApplication(db *gorm.DB) error {
 	
 	// Check if system application already exists
 	var count int64
-	if err := db.Model(&Application{}).Where("name = ? AND is_system = true", "AuthyBackoffice").Count(&count).Error; err != nil {
+	if err := db.Model(&Application{}).Where("name = ? AND is_system = true", "Authy").Count(&count).Error; err != nil {
 		return err
 	}
 	
@@ -105,8 +105,8 @@ func SeedSystemApplication(db *gorm.DB) error {
 	
 	// Create system application
 	systemApp := &Application{
-		Name:        "AuthyBackoffice",
-		Description: "Authy Authentication Service Backend Administration",
+		Name:        "Authy",
+		Description: "Central Authentication Service",
 		IsSystem:    true,
 	}
 	

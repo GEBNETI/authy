@@ -207,13 +207,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🚀 AUTH CONTEXT - Calling authApi.login with:', {
         email,
         password: '***hidden***',
-        application: 'AuthyBackoffice'
+        application: 'Authy'
       });
 
       const response = await authApi.login({ 
         email, 
         password,
-        application: 'AuthyBackoffice'
+        application: 'Authy'
       });
 
       console.log('🚀 AUTH CONTEXT - Received response:', JSON.stringify(response, null, 2));

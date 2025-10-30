@@ -6,14 +6,14 @@ services:
     container_name: authy_postgres
     environment:
       POSTGRES_DB: authy
-      POSTGRES_USER: authy_user
+      POSTGRES_USER: authy
       POSTGRES_PASSWORD: authy_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U authy_user -d authy"]
+      test: ["CMD-SHELL", "pg_isready -U authy -d authy"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,7 +37,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgres://authy_user:authy_password@postgres:5432/authy?sslmode=disable
+      DATABASE_URL: postgres://authy:authy_password@postgres:5432/authy?sslmode=disable
       VALKEY_URL: valkey:6379
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       LOG_LEVEL: info

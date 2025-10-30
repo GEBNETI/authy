@@ -102,7 +102,7 @@ func (a *Application) GetRoleCount(db *gorm.DB) (int64, error) {
 
 // ValidateSystemApplication ensures system application constraints
 func (a *Application) ValidateSystemApplication() error {
-	if a.IsSystem && a.Name != "AuthyBackoffice" {
+	if a.IsSystem && a.Name != "Authy" {
 		return gorm.ErrInvalidData
 	}
 	return nil

@@ -80,7 +80,7 @@ The system uses JWT tokens with refresh token capability. All tokens maintain re
 ### Environment Setup
 
 Development requires `.env` file with database credentials matching `docker-compose.yml`. The application expects:
-- PostgreSQL at `localhost:5432` with `authy_user:authy_password` 
+- PostgreSQL at `localhost:5432` with `authy:authy_password` 
 - Valkey at `localhost:6379`
 - JWT secrets and expiration times
 - Log levels and service metadata

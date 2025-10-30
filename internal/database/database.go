@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/efrenfuentes/authy/internal/models"
+	"github.com/GEBNETI/authy/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -15,20 +15,16 @@ func Connect(databaseURL string) (*gorm.DB, error) {
 		return nil, err
 	}
 	
-	// Run auto migrations
-	if err := models.AutoMigrate(db); err != nil {
-		return nil, err
-	}
+	// Note: Database schema is managed via SQL migrations in /migrations folder
+	// Run 'make migrate-up' to apply schema changes
 	
 	// Create additional indexes
 	if err := models.CreateIndexes(db); err != nil {
 		return nil, err
 	}
 	
-	// Seed system application
-	if err := models.SeedSystemApplication(db); err != nil {
-		return nil, err
-	}
+	// Note: System application and admin user are created via SQL migrations
+	// See /migrations/003_create_initial_admin.up.sql
 	
 	return db, nil
 }

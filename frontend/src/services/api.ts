@@ -911,7 +911,7 @@ export const auditLogsApi = {
 // Health API
 export const healthApi = {
   getHealth: (): Promise<HealthResponse> =>
-    apiClient.get('/health', { baseURL: 'http://localhost:8080' }).then(response => response.data),
+    apiClient.get('/health', { baseURL: import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8080' }).then(response => response.data),
 };
 
 // Analytics API

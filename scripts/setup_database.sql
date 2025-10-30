@@ -18,24 +18,24 @@
 
 -- Drop database if it exists (be careful in production!)
 DROP DATABASE IF EXISTS authy;
-DROP USER IF EXISTS authy_user;
+DROP USER IF EXISTS authy;
 
 -- Create database user
-CREATE USER authy_user WITH PASSWORD 'authy_password';
+CREATE USER authy WITH PASSWORD 'authy_password';
 
 -- Create database
-CREATE DATABASE authy OWNER authy_user;
+CREATE DATABASE authy OWNER authy;
 
 -- Grant all privileges on database
-GRANT ALL PRIVILEGES ON DATABASE authy TO authy_user;
+GRANT ALL PRIVILEGES ON DATABASE authy TO authy;
 
 -- Connect to the authy database
 \c authy
 
 -- Grant schema permissions
-GRANT ALL ON SCHEMA public TO authy_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authy_user;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO authy_user;
+GRANT ALL ON SCHEMA public TO authy;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authy;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO authy;
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -407,6 +407,6 @@ SELECT name, resource, action, category FROM permissions WHERE is_system = true 
 \echo 'Database Connection:';
 \echo '  Host: localhost';
 \echo '  Database: authy';
-\echo '  Username: authy_user';
+\echo '  Username: authy';
 \echo '  Password: authy_password';
 \echo '==========================================';

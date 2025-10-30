@@ -41,8 +41,8 @@ INSERT INTO roles (
     NOW()
 ) ON CONFLICT (name, application_id) DO NOTHING;
 
--- Create admin user (password: admin123 - CHANGE THIS IN PRODUCTION!)
--- Password hash is for 'admin123' using bcrypt
+-- Create admin user (password: password - CHANGE THIS IN PRODUCTION!)
+-- Password hash is for 'password' using bcrypt
 INSERT INTO users (
     email,
     password_hash,
@@ -52,8 +52,8 @@ INSERT INTO users (
     created_at,
     updated_at
 ) VALUES (
-    'admin@authy.local',
-    '$2a$10$YKrP4.3XR5r5vqDZyv5pVuehBspBY0l3jf6Uj8D3IKsvCpP8QMIoS',
+    'admin@authy.dev',
+    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
     'System',
     'Administrator',
     true,
@@ -69,11 +69,11 @@ INSERT INTO user_roles (
     granted_at,
     granted_by
 ) VALUES (
-    (SELECT id FROM users WHERE email = 'admin@authy.local'),
+    (SELECT id FROM users WHERE email = 'admin@authy.dev'),
     (SELECT id FROM roles WHERE name = 'admin' AND application_id = (SELECT id FROM applications WHERE name = 'Authy')),
     (SELECT id FROM applications WHERE name = 'Authy'),
     NOW(),
-    (SELECT id FROM users WHERE email = 'admin@authy.local') -- Self-granted
+    (SELECT id FROM users WHERE email = 'admin@authy.dev') -- Self-granted
 ) ON CONFLICT (user_id, role_id, application_id) DO NOTHING;
 
 -- Add is_system flag to admin user if column exists
@@ -83,7 +83,7 @@ BEGIN
                WHERE table_name = 'users' AND column_name = 'is_system') THEN
         UPDATE users 
         SET is_system = true 
-        WHERE email = 'admin@authy.local';
+        WHERE email = 'admin@authy.dev';
     END IF;
 END $$;
 
@@ -97,7 +97,7 @@ INSERT INTO audit_logs (
     details,
     created_at
 ) VALUES (
-    (SELECT id FROM users WHERE email = 'admin@authy.local'),
+    (SELECT id FROM users WHERE email = 'admin@authy.dev'),
     (SELECT id FROM applications WHERE name = 'Authy'),
     'create',
     'initial_setup',
@@ -109,5 +109,5 @@ INSERT INTO audit_logs (
 -- Display created credentials
 -- IMPORTANT: Change the admin password immediately after first login!
 -- Default credentials:
--- Email: admin@authy.local
--- Password: admin123
+-- Email: admin@authy.dev
+-- Password: password
