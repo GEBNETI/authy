@@ -3,8 +3,8 @@ package handlers
 import (
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/models"
-	"github.com/efrenfuentes/authy/pkg/logger"
+	"github.com/GEBNETI/authy/internal/models"
+	"github.com/GEBNETI/authy/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
