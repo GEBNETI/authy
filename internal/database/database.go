@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/efrenfuentes/authy/internal/models"
+	"github.com/GEBNETI/authy/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

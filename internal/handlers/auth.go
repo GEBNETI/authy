@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/middleware"
-	"github.com/efrenfuentes/authy/internal/models"
-	"github.com/efrenfuentes/authy/pkg/auth"
+	"github.com/GEBNETI/authy/internal/middleware"
+	"github.com/GEBNETI/authy/internal/models"
+	"github.com/GEBNETI/authy/pkg/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
