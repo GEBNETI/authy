@@ -33,6 +33,14 @@ type CreatePermissionRequest struct {
 	Category    string `json:"category"`
 }
 
+// UpdatePermissionRequest represents the update permission request payload
+type UpdatePermissionRequest struct {
+	Resource    string `json:"resource"`
+	Action      string `json:"action"`
+	Description string `json:"description"`
+	Category    string `json:"category"`
+}
+
 // PermissionResponse represents a permission in API responses
 type PermissionResponse struct {
 	ID          uuid.UUID `json:"id"`
@@ -252,6 +260,111 @@ func (h *PermissionHandler) GetPermission(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
 			Error:   true,
 			Message: "Failed to retrieve permission",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(PermissionResponse{
+		ID:          permission.ID,
+		Name:        permission.Name,
+		Resource:    permission.Resource,
+		Action:      permission.Action,
+		Description: permission.Description,
+		Category:    permission.Category,
+		IsSystem:    permission.IsSystem,
+	})
+}
+
+// UpdatePermission handles updating a permission
+// @Summary Update permission
+// @Description Update a permission (only non-system permissions)
+// @Tags Permissions
+// @Accept json
+// @Produce json
+// @Param id path string true "Permission ID"
+// @Param permission body UpdatePermissionRequest true "Updated permission data"
+// @Security BearerAuth
+// @Success 200 {object} PermissionResponse "Updated permission"
+// @Failure 400 {object} ErrorResponse "Invalid request or system permission"
+// @Failure 401 {object} ErrorResponse "Unauthorized"
+// @Failure 403 {object} ErrorResponse "Forbidden"
+// @Failure 404 {object} ErrorResponse "Permission not found"
+// @Router /permissions/{id} [put]
+func (h *PermissionHandler) UpdatePermission(c *fiber.Ctx) error {
+	permissionIDStr := c.Params("id")
+	permissionID, err := uuid.Parse(permissionIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Invalid permission ID",
+		})
+	}
+
+	var req UpdatePermissionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Invalid request body",
+		})
+	}
+
+	// Extract user context
+	_, _, _, ok := middleware.ExtractUserContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Invalid authentication context",
+		})
+	}
+
+	// Get permission to update
+	var permission models.Permission
+	if err := h.db.First(&permission, permissionID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(ErrorResponse{
+				Error:   true,
+				Message: "Permission not found",
+			})
+		}
+		h.logger.Error("Failed to retrieve permission", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Failed to update permission",
+		})
+	}
+
+	// Prevent updating system permissions
+	if permission.IsSystem {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Cannot update system permissions",
+		})
+	}
+
+	// Update fields if provided
+	if req.Resource != "" {
+		permission.Resource = req.Resource
+	}
+	if req.Action != "" {
+		permission.Action = req.Action
+	}
+	if req.Description != "" {
+		permission.Description = req.Description
+	}
+	if req.Category != "" {
+		permission.Category = req.Category
+	}
+
+	// Update the permission name (format: resource:action)
+	if req.Resource != "" || req.Action != "" {
+		permission.Name = permission.Resource + ":" + permission.Action
+	}
+
+	// Save updates
+	if err := h.db.Save(&permission).Error; err != nil {
+		h.logger.Error("Failed to update permission", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Failed to update permission",
 		})
 	}
 
