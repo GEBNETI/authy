@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/models"
-	"github.com/efrenfuentes/authy/pkg/logger"
+	"github.com/GEBNETI/authy/internal/models"
+	"github.com/GEBNETI/authy/pkg/logger"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )

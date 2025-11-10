@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"github.com/efrenfuentes/authy/internal/cache"
-	"github.com/efrenfuentes/authy/internal/config"
-	"github.com/efrenfuentes/authy/pkg/auth"
-	"github.com/efrenfuentes/authy/pkg/logger"
-	"github.com/efrenfuentes/authy/pkg/metrics"
+	"github.com/GEBNETI/authy/internal/cache"
+	"github.com/GEBNETI/authy/internal/config"
+	"github.com/GEBNETI/authy/pkg/auth"
+	"github.com/GEBNETI/authy/pkg/logger"
+	"github.com/GEBNETI/authy/pkg/metrics"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"gorm.io/gorm"

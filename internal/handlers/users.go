@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/middleware"
-	"github.com/efrenfuentes/authy/internal/models"
+	"github.com/GEBNETI/authy/internal/middleware"
+	"github.com/GEBNETI/authy/internal/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"

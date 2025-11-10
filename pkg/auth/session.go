@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/cache"
+	"github.com/GEBNETI/authy/internal/cache"
 	"github.com/google/uuid"
 )
 

@@ -1,11 +1,12 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
-import type { 
-  APIResponse, 
-  LoginRequest, 
-  LoginResponse, 
+import type {
+  APIResponse,
+  LoginRequest,
+  LoginResponse,
   RefreshTokenRequest,
   ValidateTokenRequest,
   ValidateTokenResponse,
+  UpdatePasswordRequest,
   User,
   CreateUserRequest,
   UpdateUserRequest,
@@ -199,6 +200,9 @@ export const authApi = {
 
   validateToken: (data: ValidateTokenRequest): Promise<APIResponse<ValidateTokenResponse>> =>
     request('POST', '/auth/validate', data),
+
+  updatePassword: (data: UpdatePasswordRequest): Promise<APIResponse<void>> =>
+    request('POST', '/auth/update_password', data),
 };
 
 // Users API
