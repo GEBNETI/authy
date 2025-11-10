@@ -120,6 +120,7 @@ func main() {
 	auth.Post("/logout", authHandler.Logout)
 	auth.Post("/refresh", authHandler.RefreshToken)
 	auth.Post("/validate", authHandler.ValidateToken)
+	auth.Post("/update_password", middleware.AuthRequired(sessionService), authHandler.UpdatePassword)
 	
 	// User routes (require authentication)
 	users := api.Group("/users")
