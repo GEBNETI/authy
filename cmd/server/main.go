@@ -148,6 +148,7 @@ func main() {
 	permissions.Get("/", middleware.RequirePermission("permissions", "list"), permissionHandler.GetPermissions)
 	permissions.Post("/", middleware.RequirePermission("permissions", "create"), permissionHandler.CreatePermission)
 	permissions.Get("/:id", middleware.RequirePermission("permissions", "read"), permissionHandler.GetPermission)
+	permissions.Put("/:id", middleware.RequirePermission("permissions", "update"), permissionHandler.UpdatePermission)
 	permissions.Delete("/:id", middleware.RequirePermission("permissions", "delete"), permissionHandler.DeletePermission)
 	
 	// Role routes (require authentication)
