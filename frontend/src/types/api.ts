@@ -47,6 +47,11 @@ export interface ValidateTokenRequest {
   token: string;
 }
 
+export interface UpdatePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
 export interface ValidateTokenResponse {
   valid: boolean;
   user?: User;
