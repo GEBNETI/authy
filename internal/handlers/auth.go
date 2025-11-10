@@ -517,7 +517,8 @@ func (h *AuthHandler) UpdatePassword(c *fiber.Ctx) error {
 	// Verify current password
 	if !user.CheckPassword(req.CurrentPassword) {
 		// Log failed password change attempt
-		models.CreateAuditLog(h.db, &userID, &applicationID, models.ActionPasswordChange, "user", &userID,
+		userIDStr := userID.String()
+		models.CreateAuditLog(h.db, &userID, &applicationID, models.ActionPasswordChange, "user", &userIDStr,
 			map[string]interface{}{
 				"success": false,
 				"reason":  "invalid_current_password",
@@ -548,7 +549,8 @@ func (h *AuthHandler) UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	// Log successful password change
-	models.CreateAuditLog(h.db, &userID, &applicationID, models.ActionPasswordChange, "user", &userID,
+	userIDStr := userID.String()
+	models.CreateAuditLog(h.db, &userID, &applicationID, models.ActionPasswordChange, "user", &userIDStr,
 		map[string]interface{}{
 			"success": true,
 		}, &clientIP, &userAgent)
