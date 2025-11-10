@@ -1,7 +1,7 @@
 # Variables
 BINARY_NAME=authy
 DOCKER_IMAGE=authy:latest
-GO_VERSION=1.22
+GO_VERSION=1.24
 
 # Colors for output
 GREEN=\033[0;32m
@@ -9,7 +9,7 @@ YELLOW=\033[1;33m
 RED=\033[0;31m
 NC=\033[0m # No Color
 
-.PHONY: help build run test clean docker-build docker-run docker-stop lint format deps migrate-up migrate-down
+.PHONY: help build run test clean docker-build docker-run docker-stop lint format deps migrate-up migrate-down migrate-rollback
 
 help: ## Show this help message
 	@echo "$(GREEN)Authy Authentication Service$(NC)"
@@ -38,9 +38,9 @@ clean: ## Clean build artifacts
 	rm -rf bin/
 	rm -f coverage.out coverage.html
 
-docker-build: ## Build Podman image
-	@echo "$(GREEN)Building Podman image...$(NC)"
-	podman build -t $(DOCKER_IMAGE) .
+docker-build: ## Build Docker image
+	@echo "$(GREEN)Building Docker image...$(NC)"
+	docker build -t $(DOCKER_IMAGE) .
 
 docker-run: ## Run with Docker Compose
 	@echo "$(GREEN)Starting services with Docker Compose...$(NC)"
@@ -79,6 +79,10 @@ migrate-up: ## Run database migrations up
 migrate-down: ## Run database migrations down
 	@echo "$(YELLOW)Running database migrations down...$(NC)"
 	migrate -path migrations -database "$(DATABASE_URL)" down
+
+migrate-rollback: ## Rollback last migration (down 1)
+	@echo "$(YELLOW)Rolling back last migration...$(NC)"
+	migrate -path migrations -database "$(DATABASE_URL)" down 1
 
 migrate-create: ## Create new migration (usage: make migrate-create NAME=migration_name)
 	@echo "$(GREEN)Creating migration: $(NAME)...$(NC)"

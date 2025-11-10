@@ -9,7 +9,6 @@ import (
 	"github.com/GEBNETI/authy/internal/cache"
 	"github.com/GEBNETI/authy/internal/handlers"
 	"github.com/GEBNETI/authy/internal/middleware"
-	"github.com/GEBNETI/authy/internal/models"
 	"github.com/GEBNETI/authy/internal/services"
 	"github.com/GEBNETI/authy/pkg/auth"
 	"github.com/GEBNETI/authy/pkg/logger"
@@ -51,12 +50,6 @@ func main() {
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database", "error", err)
-	}
-	
-	// Run permission migration if needed
-	if err := models.MigrateFromLegacyPermissions(db); err != nil {
-		log.Error("Failed to migrate legacy permissions", "error", err)
-		// Don't fail startup, just log the error
 	}
 	
 	// Connect to cache
