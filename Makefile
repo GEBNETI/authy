@@ -9,7 +9,7 @@ YELLOW=\033[1;33m
 RED=\033[0;31m
 NC=\033[0m # No Color
 
-.PHONY: help build run test clean docker-build docker-run docker-stop lint format deps migrate-up migrate-down migrate-rollback
+.PHONY: help build run test test-unit test-watch test-verbose test-coverage clean docker-build docker-run docker-stop lint format deps migrate-up migrate-down migrate-rollback
 
 help: ## Show this help message
 	@echo "$(GREEN)Authy Authentication Service$(NC)"
@@ -28,10 +28,30 @@ test: ## Run tests
 	@echo "$(GREEN)Running tests...$(NC)"
 	go test -v ./...
 
-test-coverage: ## Run tests with coverage
+test-unit: ## Run unit tests only (exclude integration tests)
+	@echo "$(GREEN)Running unit tests...$(NC)"
+	go test -v -short ./...
+
+test-watch: ## Run tests in watch mode
+	@echo "$(GREEN)Running tests in watch mode...$(NC)"
+	@echo "$(YELLOW)Press Ctrl+C to stop$(NC)"
+	@while true; do \
+		go test -v ./...; \
+		sleep 2; \
+	done
+
+test-verbose: ## Run tests with verbose output and race detection
+	@echo "$(GREEN)Running tests with race detection...$(NC)"
+	go test -v -race -count=1 ./...
+
+test-coverage: ## Run tests with coverage report
 	@echo "$(GREEN)Running tests with coverage...$(NC)"
-	go test -v -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
+	go test -v -coverprofile=coverage.out -covermode=atomic ./...
+	@echo "$(GREEN)Coverage report:$(NC)"
+	@go tool cover -func=coverage.out | grep total | awk '{print "Total coverage: " $$3}'
+	@echo "$(YELLOW)Generating HTML coverage report...$(NC)"
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "$(GREEN)Coverage report saved to coverage.html$(NC)"
 
 clean: ## Clean build artifacts
 	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"
