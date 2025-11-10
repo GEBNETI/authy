@@ -33,7 +33,7 @@ const updateRoleSchema = z.object({
     .max(500, 'Description must be less than 500 characters'),
   application_id: z
     .string()
-    .min(1, 'Application is required'),
+    .optional(),
   permission_ids: z.array(z.string()).optional(),
 });
 
@@ -99,9 +99,10 @@ export const RoleForm: React.FC<RoleFormProps> = ({
     if (isOpen && isEditing && role) {
       console.log('🔧 RoleForm - Editing role:', role);
       const permissionIds = role.permissions?.map(p => p.id) || [];
-      
+
       updateForm.setValue('name', role.name);
       updateForm.setValue('description', role.description);
+      updateForm.setValue('application_id', role.application_id);
       updateForm.setValue('permission_ids', permissionIds);
     } else if (isOpen && !isEditing) {
       createForm.reset();
