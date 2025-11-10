@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/middleware"
-	"github.com/efrenfuentes/authy/internal/services"
+	"github.com/GEBNETI/authy/internal/middleware"
+	"github.com/GEBNETI/authy/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )

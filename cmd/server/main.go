@@ -4,18 +4,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/config"
-	"github.com/efrenfuentes/authy/internal/database"
-	"github.com/efrenfuentes/authy/internal/cache"
-	"github.com/efrenfuentes/authy/internal/handlers"
-	"github.com/efrenfuentes/authy/internal/middleware"
-	"github.com/efrenfuentes/authy/internal/models"
-	"github.com/efrenfuentes/authy/internal/services"
-	"github.com/efrenfuentes/authy/pkg/auth"
-	"github.com/efrenfuentes/authy/pkg/logger"
-	"github.com/efrenfuentes/authy/pkg/metrics"
+	"github.com/GEBNETI/authy/internal/config"
+	"github.com/GEBNETI/authy/internal/database"
+	"github.com/GEBNETI/authy/internal/cache"
+	"github.com/GEBNETI/authy/internal/handlers"
+	"github.com/GEBNETI/authy/internal/middleware"
+	"github.com/GEBNETI/authy/internal/services"
+	"github.com/GEBNETI/authy/pkg/auth"
+	"github.com/GEBNETI/authy/pkg/logger"
+	"github.com/GEBNETI/authy/pkg/metrics"
 	
-	_ "github.com/efrenfuentes/authy/docs"
+	_ "github.com/GEBNETI/authy/docs"
 	
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -51,12 +50,6 @@ func main() {
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database", "error", err)
-	}
-	
-	// Run permission migration if needed
-	if err := models.MigrateFromLegacyPermissions(db); err != nil {
-		log.Error("Failed to migrate legacy permissions", "error", err)
-		// Don't fail startup, just log the error
 	}
 	
 	// Connect to cache
@@ -127,6 +120,7 @@ func main() {
 	auth.Post("/logout", authHandler.Logout)
 	auth.Post("/refresh", authHandler.RefreshToken)
 	auth.Post("/validate", authHandler.ValidateToken)
+	auth.Post("/update_password", middleware.AuthRequired(sessionService), authHandler.UpdatePassword)
 	
 	// User routes (require authentication)
 	users := api.Group("/users")
@@ -155,6 +149,7 @@ func main() {
 	permissions.Get("/", middleware.RequirePermission("permissions", "list"), permissionHandler.GetPermissions)
 	permissions.Post("/", middleware.RequirePermission("permissions", "create"), permissionHandler.CreatePermission)
 	permissions.Get("/:id", middleware.RequirePermission("permissions", "read"), permissionHandler.GetPermission)
+	permissions.Put("/:id", middleware.RequirePermission("permissions", "update"), permissionHandler.UpdatePermission)
 	permissions.Delete("/:id", middleware.RequirePermission("permissions", "delete"), permissionHandler.DeletePermission)
 	
 	// Role routes (require authentication)

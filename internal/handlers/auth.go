@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/efrenfuentes/authy/internal/middleware"
-	"github.com/efrenfuentes/authy/internal/models"
-	"github.com/efrenfuentes/authy/pkg/auth"
+	"github.com/GEBNETI/authy/internal/middleware"
+	"github.com/GEBNETI/authy/internal/models"
+	"github.com/GEBNETI/authy/pkg/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -57,6 +57,12 @@ type RefreshRequest struct {
 // ValidateRequest represents the token validation request payload
 type ValidateRequest struct {
 	Token string `json:"token" validate:"required"`
+}
+
+// UpdatePasswordRequest represents the password update request payload
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=8"`
 }
 
 // ValidateResponse represents the token validation response
@@ -453,6 +459,107 @@ func (h *AuthHandler) ValidateToken(c *fiber.Ctx) error {
 		},
 		Permissions: claims.Permissions,
 		ExpiresAt:   &expiresAt,
+	})
+}
+
+// UpdatePassword handles password updates for authenticated users
+// @Summary Update user password
+// @Description Update password for the authenticated user
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param update body UpdatePasswordRequest true "Password update request"
+// @Security BearerAuth
+// @Success 200 {object} SuccessResponse "Password updated successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 401 {object} ErrorResponse "Invalid current password or unauthorized"
+// @Router /auth/update_password [post]
+func (h *AuthHandler) UpdatePassword(c *fiber.Ctx) error {
+	// Extract user context
+	userID, applicationID, _, ok := middleware.ExtractUserContext(c)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Invalid authentication context",
+		})
+	}
+
+	var req UpdatePasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Invalid request body",
+		})
+	}
+
+	// Validate minimum password length
+	if len(req.NewPassword) < 8 {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
+			Error:   true,
+			Message: "New password must be at least 8 characters long",
+		})
+	}
+
+	// Get client info for audit logging
+	clientIP := middleware.ExtractClientIP(c)
+	userAgent := c.Get("User-Agent")
+
+	// Fetch user from database
+	var user models.User
+	if err := h.db.First(&user, userID).Error; err != nil {
+		h.logger.Error("Failed to retrieve user for password update", "error", err, "user_id", userID)
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Failed to update password",
+		})
+	}
+
+	// Verify current password
+	if !user.CheckPassword(req.CurrentPassword) {
+		// Log failed password change attempt
+		userIDStr := userID.String()
+		models.CreateAuditLog(h.db, &userID, &applicationID, models.ActionPasswordChange, "user", &userIDStr,
+			map[string]interface{}{
+				"success": false,
+				"reason":  "invalid_current_password",
+			}, &clientIP, &userAgent)
+
+		return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Invalid current password",
+		})
+	}
+
+	// Set new password
+	if err := user.SetPassword(req.NewPassword); err != nil {
+		h.logger.Error("Failed to hash new password", "error", err, "user_id", userID)
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Failed to update password",
+		})
+	}
+
+	// Save updated user
+	if err := h.db.Save(&user).Error; err != nil {
+		h.logger.Error("Failed to save user with new password", "error", err, "user_id", userID)
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse{
+			Error:   true,
+			Message: "Failed to update password",
+		})
+	}
+
+	// Log successful password change
+	userIDStr := userID.String()
+	models.CreateAuditLog(h.db, &userID, &applicationID, models.ActionPasswordChange, "user", &userIDStr,
+		map[string]interface{}{
+			"success": true,
+		}, &clientIP, &userAgent)
+
+	h.logger.Info("Password updated successfully", "user_id", userID)
+
+	return c.Status(fiber.StatusOK).JSON(SuccessResponse{
+		Success: true,
+		Message: "Password updated successfully",
 	})
 }
 
