@@ -16,7 +16,7 @@ help: ## Show this help message
 	@echo "Available commands:"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Build the application
+build: swagger ## Build the application
 	@echo "$(GREEN)Building $(BINARY_NAME)...$(NC)"
 	go build -o bin/$(BINARY_NAME) ./cmd/server
 

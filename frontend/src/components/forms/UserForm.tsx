@@ -192,7 +192,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-base-content/40 hover:text-base-content/60"
+                  className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 z-10"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -215,7 +215,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-9 text-base-content/40 hover:text-base-content/60"
+                  className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 z-10"
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
