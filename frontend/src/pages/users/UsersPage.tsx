@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  UserMinus, 
-  Shield, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Edit,
+  UserMinus,
+  Shield,
   MoreVertical,
   UserCheck,
-  UserX
+  UserX,
+  KeyRound
 } from 'lucide-react';
 import { 
   Button, 
@@ -33,6 +34,11 @@ const UsersPage: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [showRolesModal, setShowRolesModal] = useState(false);
   const [userForRoles, setUserForRoles] = useState<User | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [userForPassword, setUserForPassword] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const {
     users,
@@ -88,6 +94,44 @@ const UsersPage: React.FC = () => {
   const handleManageRoles = (user: User) => {
     setUserForRoles(user);
     setShowRolesModal(true);
+  };
+
+  // Handle change password
+  const handleChangePassword = (user: User) => {
+    setUserForPassword(user);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setShowPasswordModal(true);
+  };
+
+  // Handle password change submit
+  const handlePasswordSubmit = async () => {
+    if (!userForPassword) return;
+
+    // Validate passwords
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      await updateUser(userForPassword.id, { password: newPassword });
+      setShowPasswordModal(false);
+      setUserForPassword(null);
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordError('');
+    } catch (error) {
+      setPasswordError('Failed to update password');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   // Handle form submit
@@ -254,6 +298,12 @@ const UsersPage: React.FC = () => {
                 </a>
               </li>
               <li>
+                <a onClick={() => handleChangePassword(record)}>
+                  <KeyRound className="w-4 h-4" />
+                  Change Password
+                </a>
+              </li>
+              <li>
                 <a>
                   <UserCheck className="w-4 h-4" />
                   View Activity
@@ -413,6 +463,91 @@ const UsersPage: React.FC = () => {
             icon={userToDelete?.is_active ? UserMinus : UserCheck}
           >
             {userToDelete?.is_active ? 'Deactivate User' : 'Activate User'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Change Password Modal */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setUserForPassword(null);
+          setNewPassword('');
+          setConfirmPassword('');
+          setPasswordError('');
+        }}
+        title="Change Password"
+        size="sm"
+      >
+        <ModalBody>
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-4">
+                <KeyRound className="h-6 w-6 text-primary" />
+              </div>
+              <p className="text-sm text-base-content/70">
+                Set a new password for{' '}
+                <span className="font-medium">
+                  {userForPassword?.first_name} {userForPassword?.last_name}
+                </span>
+              </p>
+            </div>
+
+            <Input
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPasswordError('');
+              }}
+              placeholder="Enter new password"
+              fullWidth
+            />
+
+            <Input
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setPasswordError('');
+              }}
+              placeholder="Confirm new password"
+              fullWidth
+            />
+
+            {passwordError && (
+              <p className="text-sm text-error">{passwordError}</p>
+            )}
+
+            <p className="text-xs text-base-content/50">
+              Password must be at least 8 characters long.
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowPasswordModal(false);
+              setUserForPassword(null);
+              setNewPassword('');
+              setConfirmPassword('');
+              setPasswordError('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handlePasswordSubmit}
+            loading={formLoading}
+            disabled={!newPassword || !confirmPassword}
+            icon={KeyRound}
+          >
+            Change Password
           </Button>
         </ModalFooter>
       </Modal>
