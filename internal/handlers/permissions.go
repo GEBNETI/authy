@@ -70,6 +70,7 @@ type PermissionsListResponse struct {
 // @Param per_page query int false "Items per page" default(10)
 // @Param category query string false "Filter by category"
 // @Param resource query string false "Filter by resource"
+// @Param search query string false "Search by name, resource, action, or description"
 // @Security BearerAuth
 // @Success 200 {object} PermissionsListResponse "Permissions list"
 // @Failure 401 {object} ErrorResponse "Unauthorized"
@@ -90,6 +91,7 @@ func (h *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
 	perPage, _ := strconv.Atoi(c.Query("per_page", "10"))
 	category := c.Query("category", "")
 	resource := c.Query("resource", "")
+	search := c.Query("search", "")
 
 	if page < 1 {
 		page = 1
@@ -109,6 +111,13 @@ func (h *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
 	}
 	if resource != "" {
 		query = query.Where("resource = ?", resource)
+	}
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where(
+			"name ILIKE ? OR resource ILIKE ? OR action ILIKE ? OR description ILIKE ?",
+			searchPattern, searchPattern, searchPattern, searchPattern,
+		)
 	}
 
 	// Get total count
