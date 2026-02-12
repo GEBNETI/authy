@@ -29,6 +29,7 @@ go.work
 .envrc
 
 # IDE
+.claude/
 .vscode/
 .idea/
 *.swp
