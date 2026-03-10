@@ -17,7 +17,7 @@ type CreateApplicationRequest struct {
 	Description string `json:"description" validate:"max=500"`
 }
 
-// UpdateApplicationRequest represents the update application request payload  
+// UpdateApplicationRequest represents the update application request payload
 type UpdateApplicationRequest struct {
 	Name        *string `json:"name,omitempty" validate:"omitempty,min=2,max=100"`
 	Description *string `json:"description,omitempty" validate:"omitempty,max=500"`
@@ -44,11 +44,11 @@ type ApplicationWithStatsResponse struct {
 
 // ApplicationStats represents application usage statistics
 type ApplicationStats struct {
-	TotalUsers        int64 `json:"total_users"`
-	ActiveUsers       int64 `json:"active_users"`
-	TotalRoles        int64 `json:"total_roles"`
-	TotalPermissions  int64 `json:"total_permissions"`
-	RecentLogins      int64 `json:"recent_logins_24h"`
+	TotalUsers       int64 `json:"total_users"`
+	ActiveUsers      int64 `json:"active_users"`
+	TotalRoles       int64 `json:"total_roles"`
+	TotalPermissions int64 `json:"total_permissions"`
+	RecentLogins     int64 `json:"recent_logins_24h"`
 }
 
 // ApplicationsListResponse represents the paginated applications list response
@@ -147,8 +147,9 @@ func (h *ApplicationHandler) GetApplications(c *fiber.Ctx) error {
 		hasAdminPermission = false
 	}
 
-	// Convert to response format
-	var applicationResponses []ApplicationResponse
+	// Convert to response format. Initialize to an empty slice so no-result
+	// searches are encoded as [] instead of null.
+	applicationResponses := make([]ApplicationResponse, 0, len(applications))
 	for _, app := range applications {
 		appResponse := ApplicationResponse{
 			ID:          app.ID,
@@ -362,7 +363,7 @@ func (h *ApplicationHandler) GetApplication(c *fiber.Ctx) error {
 		// Get active users (users who logged in within 24 hours)
 		var activeUsers int64
 		h.db.Table("audit_logs").
-			Where("application_id = ? AND action = ? AND created_at > ?", 
+			Where("application_id = ? AND action = ? AND created_at > ?",
 				applicationID, models.ActionLogin, time.Now().Add(-24*time.Hour)).
 			Distinct("user_id").
 			Count(&activeUsers)

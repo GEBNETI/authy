@@ -148,11 +148,12 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 		})
 	}
 
-	// Convert to response format with roles
-	var userResponses []UserWithRolesResponse
+	// Convert to response format with roles. Initialize to an empty slice so
+	// no-result searches are encoded as [] instead of null.
+	userResponses := make([]UserWithRolesResponse, 0, len(users))
 	for _, user := range users {
 		// Convert user roles to response format
-		var userRoleResponses []UserRoleResponse
+		userRoleResponses := make([]UserRoleResponse, 0, len(user.UserRoles))
 		for _, userRole := range user.UserRoles {
 			roleResponse := UserRoleResponse{
 				ID:            userRole.ID,
@@ -161,17 +162,17 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 				GrantedAt:     userRole.GrantedAt,
 				GrantedBy:     userRole.GrantedBy,
 			}
-			
+
 			// Include role name if available
 			if userRole.Role != nil {
 				roleResponse.RoleName = userRole.Role.Name
 			}
-			
+
 			// Include application name if available
 			if userRole.Application != nil {
 				roleResponse.Application = userRole.Application.Name
 			}
-			
+
 			// Include granted by user info if available
 			if userRole.GrantedByUser != nil {
 				roleResponse.GrantedByUser = &UserResponse{
@@ -185,10 +186,10 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 					UpdatedAt: userRole.GrantedByUser.UpdatedAt,
 				}
 			}
-			
+
 			userRoleResponses = append(userRoleResponses, roleResponse)
 		}
-		
+
 		userResponses = append(userResponses, UserWithRolesResponse{
 			UserResponse: UserResponse{
 				ID:        user.ID,
@@ -299,7 +300,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 
 	// Log successful creation
 	userIDStr := user.ID.String()
-	models.CreateAuditLog(h.db, &currentUserID, &applicationID, models.ActionUserCreate, "user", 
+	models.CreateAuditLog(h.db, &currentUserID, &applicationID, models.ActionUserCreate, "user",
 		&userIDStr,
 		map[string]interface{}{
 			"email":      user.Email,
@@ -549,7 +550,7 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 	}
 
 	userIDForAudit := user.ID.String()
-	models.CreateAuditLog(h.db, &currentUserID, &applicationID, models.ActionUserUpdate, "user", 
+	models.CreateAuditLog(h.db, &currentUserID, &applicationID, models.ActionUserUpdate, "user",
 		&userIDForAudit,
 		map[string]interface{}{
 			"original": originalValues,
@@ -646,7 +647,7 @@ func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
 
 	// Log the deletion
 	userIDForAudit := user.ID.String()
-	models.CreateAuditLog(h.db, &currentUserID, &applicationID, models.ActionUserDelete, "user", 
+	models.CreateAuditLog(h.db, &currentUserID, &applicationID, models.ActionUserDelete, "user",
 		&userIDForAudit,
 		map[string]interface{}{
 			"email":      user.Email,

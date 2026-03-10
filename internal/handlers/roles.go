@@ -139,8 +139,9 @@ func (h *RoleHandler) GetRoles(c *fiber.Ctx) error {
 		})
 	}
 
-	// Convert to response format
-	var roleResponses []RoleResponse
+	// Convert to response format. Initialize to an empty slice so no-result
+	// searches are encoded as [] instead of null.
+	roleResponses := make([]RoleResponse, 0, len(roles))
 	for _, role := range roles {
 		// Get user count for this role
 		userCount, err := role.GetUserCount(h.db)
@@ -164,7 +165,7 @@ func (h *RoleHandler) GetRoles(c *fiber.Ctx) error {
 
 		// Add permissions if loaded
 		if role.Permissions != nil {
-			var permissions []PermissionResponse
+			permissions := make([]PermissionResponse, 0, len(role.Permissions))
 			for _, perm := range role.Permissions {
 				permissions = append(permissions, PermissionResponse{
 					ID:          perm.ID,

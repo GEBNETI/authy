@@ -215,20 +215,26 @@ export const usersApi = {
     console.log('👥 USERS API - getUsers called with params:', params);
     
     try {
-      const response: AxiosResponse<any> = await apiClient.get('/users', { params });
+      const backendParams = {
+        page: params?.page,
+        per_page: params?.limit,
+        search: params?.search,
+      };
+      const response: AxiosResponse<any> = await apiClient.get('/users', { params: backendParams });
       console.log('👥 USERS API - Raw response:', JSON.stringify(response.data, null, 2));
       
       // Backend returns: { success: true, users: [...], pagination: {...} }
       // Frontend expects: APIResponse<PaginatedResponse<User>>
       const backendData = response.data;
       
-      if (backendData.success && backendData.users) {
+      if (backendData.success) {
+        const users = Array.isArray(backendData.users) ? backendData.users : [];
         const transformedData: PaginatedResponse<User> = {
-          items: backendData.users,
-          total: backendData.pagination.total,
-          page: backendData.pagination.page,
-          limit: backendData.pagination.per_page,
-          totalPages: backendData.pagination.total_pages,
+          items: users,
+          total: backendData.pagination?.total || 0,
+          page: backendData.pagination?.page || params?.page || 1,
+          limit: backendData.pagination?.per_page || params?.limit || 10,
+          totalPages: backendData.pagination?.total_pages || 0,
         };
         
         const result: APIResponse<PaginatedResponse<User>> = {
@@ -349,20 +355,26 @@ export const applicationsApi = {
     console.log('🏢 APPLICATIONS API - getApplications called with params:', params);
     
     try {
-      const response: AxiosResponse<ApplicationsResponse> = await apiClient.get('/applications', { params });
+      const backendParams = {
+        page: params?.page,
+        per_page: params?.limit,
+        search: params?.search,
+      };
+      const response: AxiosResponse<ApplicationsResponse> = await apiClient.get('/applications', { params: backendParams });
       console.log('🏢 APPLICATIONS API - Raw response:', JSON.stringify(response.data, null, 2));
       
       // Backend returns: { success: true, applications: [...], pagination: {...} }
       // Frontend expects: APIResponse<PaginatedResponse<Application>>
       const backendData = response.data;
       
-      if (backendData.success && backendData.applications) {
+      if (backendData.success) {
+        const applications = Array.isArray(backendData.applications) ? backendData.applications : [];
         const transformedData: PaginatedResponse<Application> = {
-          items: backendData.applications,
-          total: backendData.pagination.total,
-          page: backendData.pagination.page,
-          limit: backendData.pagination.per_page,
-          totalPages: backendData.pagination.total_pages,
+          items: applications,
+          total: backendData.pagination?.total || 0,
+          page: backendData.pagination?.page || params?.page || 1,
+          limit: backendData.pagination?.per_page || params?.limit || 10,
+          totalPages: backendData.pagination?.total_pages || 0,
         };
         
         const result: APIResponse<PaginatedResponse<Application>> = {
@@ -639,20 +651,26 @@ export const rolesApi = {
     console.log('👑 ROLES API - getRoles called with params:', params);
     
     try {
-      const response: AxiosResponse<RolesResponse> = await apiClient.get('/roles', { params });
+      const backendParams = {
+        page: params?.page,
+        per_page: params?.limit,
+        search: params?.search,
+      };
+      const response: AxiosResponse<RolesResponse> = await apiClient.get('/roles', { params: backendParams });
       console.log('👑 ROLES API - Raw response:', JSON.stringify(response.data, null, 2));
       
       // Backend returns: { success: true, roles: [...], pagination: {...} }
       // Frontend expects: APIResponse<PaginatedResponse<Role>>
       const backendData = response.data;
       
-      if (backendData.success && backendData.roles) {
+      if (backendData.success) {
+        const roles = Array.isArray(backendData.roles) ? backendData.roles : [];
         const transformedData: PaginatedResponse<Role> = {
-          items: backendData.roles,
-          total: backendData.pagination.total,
-          page: backendData.pagination.page,
-          limit: backendData.pagination.per_page,
-          totalPages: backendData.pagination.total_pages,
+          items: roles,
+          total: backendData.pagination?.total || 0,
+          page: backendData.pagination?.page || params?.page || 1,
+          limit: backendData.pagination?.per_page || params?.limit || 10,
+          totalPages: backendData.pagination?.total_pages || 0,
         };
         
         const result: APIResponse<PaginatedResponse<Role>> = {
