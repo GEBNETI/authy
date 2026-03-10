@@ -160,7 +160,7 @@ export interface UpdatePermissionRequest {
 export interface PermissionsResponse {
   success: boolean;
   message?: string;
-  permissions: Permission[];
+  permissions: Permission[] | null;
   pagination: {
     page: number;
     per_page: number;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react';
 import type { Notification, NotificationState } from '../types';
 import { utils } from '../utils';
 
@@ -59,7 +59,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [state, dispatch] = useReducer(notificationReducer, initialState);
 
   // Add notification function
-  const addNotification = (notification: Omit<Notification, 'id'>): void => {
+  const addNotification = useCallback((notification: Omit<Notification, 'id'>): void => {
     const notificationId = utils.generateId();
     dispatch({ type: 'ADD_NOTIFICATION', payload: { ...notification, id: notificationId } });
 
@@ -70,25 +70,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         dispatch({ type: 'REMOVE_NOTIFICATION', payload: notificationId });
       }, duration);
     }
-  };
+  }, []);
 
   // Remove notification function
-  const removeNotification = (id: string): void => {
+  const removeNotification = useCallback((id: string): void => {
     dispatch({ type: 'REMOVE_NOTIFICATION', payload: id });
-  };
+  }, []);
 
   // Clear all notifications function
-  const clearNotifications = (): void => {
+  const clearNotifications = useCallback((): void => {
     dispatch({ type: 'CLEAR_NOTIFICATIONS' });
-  };
+  }, []);
 
   // Context value
-  const value: NotificationState = {
+  const value: NotificationState = useMemo(() => ({
     notifications: state.notifications,
     addNotification,
     removeNotification,
     clearNotifications,
-  };
+  }), [state.notifications, addNotification, removeNotification, clearNotifications]);
 
   return (
     <NotificationContext.Provider value={value}>

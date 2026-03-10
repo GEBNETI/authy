@@ -505,13 +505,14 @@ export const permissionsApi = {
       // Frontend expects: APIResponse<PaginatedResponse<Permission>>
       const backendData = response.data;
       
-      if (backendData.success && backendData.permissions) {
+      if (backendData.success) {
+        const permissions = Array.isArray(backendData.permissions) ? backendData.permissions : [];
         const transformedData: PaginatedResponse<Permission> = {
-          items: backendData.permissions,
-          total: backendData.pagination.total,
-          page: backendData.pagination.page,
-          limit: backendData.pagination.per_page,
-          totalPages: backendData.pagination.total_pages,
+          items: permissions,
+          total: backendData.pagination?.total || 0,
+          page: backendData.pagination?.page || params?.page || 1,
+          limit: backendData.pagination?.per_page || params?.limit || 10,
+          totalPages: backendData.pagination?.total_pages || 0,
         };
         
         const result: APIResponse<PaginatedResponse<Permission>> = {

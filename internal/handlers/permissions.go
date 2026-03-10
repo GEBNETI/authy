@@ -140,8 +140,9 @@ func (h *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
 		})
 	}
 
-	// Convert to response format
-	var permissionResponses []PermissionResponse
+	// Convert to response format. Initialize to an empty slice so JSON encodes
+	// no-result searches as [] instead of null.
+	permissionResponses := make([]PermissionResponse, 0, len(permissions))
 	for _, permission := range permissions {
 		permissionResponses = append(permissionResponses, PermissionResponse{
 			ID:          permission.ID,
