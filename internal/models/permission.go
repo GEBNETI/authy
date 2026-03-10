@@ -13,12 +13,12 @@ import (
 // Permission represents a specific permission in the system
 type Permission struct {
 	ID          uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Name        string    `json:"name" gorm:"uniqueIndex;not null;size:100"`        // "users:read"
-	Resource    string    `json:"resource" gorm:"not null;size:50;index"`          // "users"
-	Action      string    `json:"action" gorm:"not null;size:50;index"`            // "read"
-	Description string    `json:"description" gorm:"size:500"`                     // Human readable description
-	Category    string    `json:"category" gorm:"size:50;index"`                   // "user_management", "system", etc.
-	IsSystem    bool      `json:"is_system" gorm:"default:false;index"`            // Cannot be deleted
+	Name        string    `json:"name" gorm:"uniqueIndex;not null;size:100"` // "users:read"
+	Resource    string    `json:"resource" gorm:"not null;size:50;index"`    // "users"
+	Action      string    `json:"action" gorm:"not null;size:50;index"`      // "read"
+	Description string    `json:"description" gorm:"size:500"`               // Human readable description
+	Category    string    `json:"category" gorm:"size:50;index"`             // "user_management", "system", etc.
+	IsSystem    bool      `json:"is_system" gorm:"default:false;index"`      // Cannot be deleted
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 
@@ -35,9 +35,9 @@ type RolePermission struct {
 	GrantedBy    *uuid.UUID `json:"granted_by" gorm:"type:uuid"`
 
 	// Relationships
-	Role          Role        `json:"role,omitempty" gorm:"foreignKey:RoleID;constraint:OnDelete:CASCADE"`
-	Permission    Permission  `json:"permission,omitempty" gorm:"foreignKey:PermissionID;constraint:OnDelete:CASCADE"`
-	GrantedByUser *User       `json:"granted_by_user,omitempty" gorm:"foreignKey:GrantedBy"`
+	Role          Role       `json:"role,omitempty" gorm:"foreignKey:RoleID;constraint:OnDelete:CASCADE"`
+	Permission    Permission `json:"permission,omitempty" gorm:"foreignKey:PermissionID;constraint:OnDelete:CASCADE"`
+	GrantedByUser *User      `json:"granted_by_user,omitempty" gorm:"foreignKey:GrantedBy"`
 }
 
 // TableName specifies the table name for RolePermission
@@ -73,7 +73,7 @@ func (p *Permission) validate() error {
 	// Generate name from resource and action (application-scoped)
 	// If resource doesn't start with application prefix, add it
 	resource := strings.ToLower(p.Resource)
-	if !strings.HasPrefix(resource, "authy_") {
+	if !strings.Contains(resource, "_") {
 		resource = "authy_" + resource
 	}
 	p.Name = fmt.Sprintf("%s:%s", resource, strings.ToLower(p.Action))
@@ -165,15 +165,15 @@ func GetUserPermissions(db *gorm.DB, userID, applicationID uuid.UUID) ([]Permiss
 // HasUserPermission checks if a user has a specific permission in an application
 func HasUserPermission(db *gorm.DB, userID, applicationID uuid.UUID, resource, action string) (bool, error) {
 	permissionName := fmt.Sprintf("%s:%s", strings.ToLower(resource), strings.ToLower(action))
-	
+
 	var count int64
 	err := db.Model(&Permission{}).
 		Joins("JOIN role_permissions ON role_permissions.permission_id = permissions.id").
 		Joins("JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
-		Where("user_roles.user_id = ? AND user_roles.application_id = ? AND permissions.name = ?", 
+		Where("user_roles.user_id = ? AND user_roles.application_id = ? AND permissions.name = ?",
 			userID, applicationID, permissionName).
 		Count(&count).Error
-	
+
 	return count > 0, err
 }
 
@@ -194,7 +194,7 @@ var SystemPermissions = []Permission{
 	{Resource: "authy_users", Action: "update", Description: "Update user information in Authy", Category: "user_management", IsSystem: true},
 	{Resource: "authy_users", Action: "delete", Description: "Delete/deactivate users in Authy", Category: "user_management", IsSystem: true},
 	{Resource: "authy_users", Action: "list", Description: "List all users in Authy", Category: "user_management", IsSystem: true},
-	
+
 	// Role Management (authy_ prefixed)
 	{Resource: "authy_roles", Action: "create", Description: "Create new roles in Authy", Category: "role_management", IsSystem: true},
 	{Resource: "authy_roles", Action: "read", Description: "View role information in Authy", Category: "role_management", IsSystem: true},
@@ -203,7 +203,7 @@ var SystemPermissions = []Permission{
 	{Resource: "authy_roles", Action: "list", Description: "List all roles in Authy", Category: "role_management", IsSystem: true},
 	{Resource: "authy_roles", Action: "assign", Description: "Assign roles to users in Authy", Category: "role_management", IsSystem: true},
 	{Resource: "authy_roles", Action: "revoke", Description: "Revoke roles from users in Authy", Category: "role_management", IsSystem: true},
-	
+
 	// Permission Management (authy_ prefixed)
 	{Resource: "authy_permissions", Action: "create", Description: "Create new permissions in Authy", Category: "permission_management", IsSystem: true},
 	{Resource: "authy_permissions", Action: "read", Description: "View permission information in Authy", Category: "permission_management", IsSystem: true},
@@ -212,19 +212,19 @@ var SystemPermissions = []Permission{
 	{Resource: "authy_permissions", Action: "list", Description: "List all permissions in Authy", Category: "permission_management", IsSystem: true},
 	{Resource: "authy_permissions", Action: "assign", Description: "Assign permissions to roles in Authy", Category: "permission_management", IsSystem: true},
 	{Resource: "authy_permissions", Action: "revoke", Description: "Revoke permissions from roles in Authy", Category: "permission_management", IsSystem: true},
-	
+
 	// Application Management (authy_ prefixed)
 	{Resource: "authy_applications", Action: "create", Description: "Create new applications in Authy", Category: "application_management", IsSystem: true},
 	{Resource: "authy_applications", Action: "read", Description: "View application information in Authy", Category: "application_management", IsSystem: true},
 	{Resource: "authy_applications", Action: "update", Description: "Update application information in Authy", Category: "application_management", IsSystem: true},
 	{Resource: "authy_applications", Action: "delete", Description: "Delete applications in Authy", Category: "application_management", IsSystem: true},
 	{Resource: "authy_applications", Action: "list", Description: "List all applications in Authy", Category: "application_management", IsSystem: true},
-	
+
 	// System Administration (authy_ prefixed)
 	{Resource: "authy_system", Action: "admin", Description: "Full system administration access in Authy", Category: "system", IsSystem: true},
 	{Resource: "authy_system", Action: "audit", Description: "View audit logs and system monitoring in Authy", Category: "system", IsSystem: true},
 	{Resource: "authy_system", Action: "config", Description: "Modify system configuration in Authy", Category: "system", IsSystem: true},
-	
+
 	// Analytics permissions
 	{Resource: "authy_analytics", Action: "read", Description: "View analytics and reports in Authy", Category: "system", IsSystem: true},
 }
